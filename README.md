@@ -3,7 +3,10 @@
 Native App zu [s3mail](../s3mail). Der Entwurf steht dort in
 [`IOS.md`](../s3mail/-/blob/main/IOS.md); hier steht, was davon gebaut ist.
 
-**Stand 2026-08-25: der Spike aus Schritt 1, sonst nichts.** Es gibt keine App.
+**Stand 2026-08-25: die Schritte 1 bis 4 sind gebaut.** Es gibt eine App: sie
+richtet sich per QR-Code ein, zeigt Ordner und Postfach, öffnet Mail, schreibt
+Entwürfe in den Bucket und verschickt über SES. Offen sind Push (Schritt 5) und
+Verteilung (Schritt 6) — beide hängen am Mac-Runner und an Apple, nicht am Code.
 
 ## Was der Spike beantwortet hat
 
@@ -58,21 +61,88 @@ fängt auch `mailbox-alt/` ein, und das Postfach enthielte still fremde Post.
 `Keychain` legt das Ergebnis ab, mit `WhenUnlockedThisDeviceOnly`: nicht lesbar,
 solange das Telefon gesperrt ist, und nie auf ein zweites Gerät zurückgespielt.
 
-**Der Schlüsselbund ist unbewiesen.** Ein SwiftPM-Testbündel hat auf dem
-Simulator kein Entitlement dafür (`-34018`), und ohne Host-App gibt es keinen
-Schlüsselbund zum Reden. Die Tests überspringen deshalb — aber **nur** bei genau
-diesem Fehlercode; jeder andere Status lässt sie weiter scheitern. Ein Skip, der
-alle Schlüsselbund-Fehler schluckt, machte aus einem echten Defekt einen grünen
-Lauf, und ein Schlüsselbund, der still nichts speichert, ist das, was jemand im
-Zug bemerkt.
+**Der Schlüsselbund ist bewiesen — seit es die App gibt.** Vorher übersprangen
+sich die Tests selbst: ein SwiftPM-Testbündel hat auf dem Simulator kein
+Entitlement dafür (`-34018`), und ohne Host-App gibt es keinen Schlüsselbund zum
+Reden. Ein übersprungener Test ist kein bestandener Test, und ein Schlüsselbund,
+der still nichts speichert, ist das, was jemand im Zug bemerkt. Sie liegen
+deshalb jetzt in `AppTests/`, in einem Bündel, das die App hostet.
+
+## Schritt 3: Liste und Lesen
+
+Gebaut, gegen das echte Postfach geprüft. Drei Entscheidungen mit Begründung im
+Code:
+
+- **Der Index liegt in Application Support, nicht in Caches.** iOS leert `Caches`,
+  wann es will — meist ohne Netz.
+- **Kein zweites Verschlüsseln.** Am Schreibtisch wird verschlüsselt, weil ein
+  Heimatverzeichnis in Backups und synchronisierten Ordnern mitreist. Eine
+  App-Sandbox tut das nicht: sie steht schon unter dem Dateischutz des Geräts,
+  und ein zweiter Schlüssel wäre mehr Fläche als Schutz.
+- **`allowDelete` bleibt aus.** Das Telefon zeigt und verschiebt; Löschen ist
+  eine Entscheidung für den Schreibtisch.
+
+**HTML-Mail wird noch nicht angezeigt.** Am Schreibtisch macht erst die Anordnung
+aus `sandbox=""`-iframe, CSP und blockierten Bildern das Anzeigen fremden HTMLs
+vertretbar. Die halbe Umsetzung wäre schlimmer als keine.
+
+## Schritt 4: Schreiben und Senden
+
+Entwürfe liegen als **richtige Nachrichten in `drafts/`**, nicht in einem
+app-eigenen Speicher — deshalb sieht der Schreibtisch sie fünf Minuten später,
+ohne dass die App irgendetwas abgleicht.
+
+Die Reihenfolge beim Senden ist die aus `web/send.go`, bewusst übernommen und
+nicht verbessert:
+
+- **Erst den Versuch vermerken, dann senden.** Der Marker aus `store/sending.go`
+  überlebt einen Prozess, der mittendrin stirbt. Auf dem Telefon ist das kein
+  Randfall: iOS beendet Apps im Hintergrund ohne Vorwarnung.
+- **Sobald SES angenommen hat, darf nichts mehr die Antwort zu einem Fehler
+  machen.** Eine Kopie, die nicht in `sent/` ankam, ist eine Warnung. Als Fehler
+  gemeldet liest sie sich als „nicht verschickt", und die Mail geht ein zweites
+  Mal raus.
+
+Beim Start fragt die App nach, was `RecoverSends` nicht selbst entscheiden kann.
+Raten geht in beide Richtungen schief: „verschickt" verliert eine Mail, „nicht
+verschickt" verschickt sie doppelt.
+
+## Texte
+
+Die App hat einen eigenen Katalog in `de`, `en`, `es`, und einen Test dafür wie
+`i18n_test.go` im Kern: jede Sprache trägt jeden Schlüssel, die Platzhalter
+stimmen überein.
+
+**Die Brücke gibt Codes zurück, keine Sätze** (`send_not_permitted`). Ein
+Go-Kern in einer App hat keine Sprache zu haben — welche gilt, entscheidet das
+Telefon.
+
+`core.Folder.Label` ist ebenfalls ein Katalogschlüssel und kein Wort: der
+Ordnername ist ein S3-Prefix und darf nie übersetzt werden, sonst findet ein
+Client in einer anderen Sprache die Mail nicht mehr, die ein Kollege abgelegt
+hat. Ein selbst angelegter Ordner steht nicht im Katalog und kommt unverändert
+zurück — dieser Rückfall ist die Absicht, nicht ein Versehen.
 
 ## Aufbau
 
     mobile/            Go: die Fassade, die Swift sieht. Eigenes Modul, weil
                        gomobile golang.org/x/mobile verlangt und s3mail nur
                        Standardbibliothek plus AWS-SDK und go-message nimmt.
-    Sources/S3mailKit  Swift über der Brücke
+    Sources/S3mailKit  Swift über der Brücke: Postfach, Ansichten, Katalog
     Tests/             XCTest gegen dieselben hässlichen Mails wie der Go-Korpus
+    ios-app/           die App: Projektdatei, Quellen, Tests mit Host
+
+Die Projektdatei ist klein, weil Xcode 16 **synchronisierte Ordner** kann: das
+Ziel nennt `ios-app/Sources`, und jede Datei darin ist im Bau, ohne einen
+Eintrag von sich.
+Die Alternative wäre `xcodegen` gewesen — eine YAML-Datei plus ein Werkzeug, das
+der Mac-Runner auch installieren müsste. Dieselbe Überlegung wie bei
+`tools/zip.go` im Kern: keine Abhängigkeit für das, was auf einen Bildschirm
+passt.
+
+Sie liegt in einem Unterverzeichnis und nicht neben `Package.swift`: mit einer
+`.xcodeproj` im Wurzelverzeichnis meint `xcodebuild` dort immer das Projekt, und
+die Tests des Pakets wären unerreichbar, ohne dass es jemandem gesagt würde.
 
 Das Modul `mobile` zeigt über ein `replace` auf einen lokalen Auscheck des
 Kerns. Sobald der Kern getaggt ist, wird daraus eine Version.
@@ -80,8 +150,20 @@ Kerns. Sobald der Kern getaggt ist, wird daraus eine Version.
 ## Bauen
 
     make framework     baut das XCFramework
-    make test          braucht eine Simulator-Laufzeit:
+    make test          Paket-Tests, braucht eine Simulator-Laufzeit:
                        xcodebuild -downloadPlatform iOS
+    make app           baut die App
+    make app-test      die Tests, die eine Host-App brauchen
+
+Die Tests gegen ein echtes Postfach laufen nur mit Zugangsdaten in der Umgebung,
+und `xcodebuild` reicht **ausschließlich** Variablen mit dem Präfix
+`TEST_RUNNER_` an das Testbündel weiter. Ohne das Präfix überspringen sie sich
+still, während die Zusammenfassung „passed" meldet:
+
+    TEST_RUNNER_S3MAIL_KEY=… TEST_RUNNER_S3MAIL_SECRET=… \
+    TEST_RUNNER_S3MAIL_REGION=eu-north-1 \
+    TEST_RUNNER_S3MAIL_BUCKET=… TEST_RUNNER_S3MAIL_PREFIX="mail/ole/" \
+    make test
 
 Eine Pipeline gibt es noch nicht: dafür braucht es einen Mac-Runner mit Tag
 `mac`, und ausdrücklich **ohne** „run untagged jobs" — sonst nimmt er die

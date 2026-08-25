@@ -65,3 +65,19 @@
 "setup.notAMailbox"      = "This code does not carry a mailbox.";
 "setup.missingField"     = "The code is missing %@.";
 "setup.prefixNotAFolder" = "The prefix %@ does not end in a slash - S3 would read it as the start of a name, not a folder.";
+
+/* Setting a device up from the code the desktop assistant shows. */
+"setup.mailbox"        = "Mailbox";
+"setup.bucket"         = "Bucket";
+"setup.prefix"         = "Prefix";
+"setup.region"         = "Region";
+"setup.from"           = "Sender";
+"setup.deviceAccess"   = "This device's access";
+"setup.accessKey"      = "Access Key ID";
+"setup.secret"         = "Secret Access Key";
+"setup.keysNotInCode"  = "The keys are not in the QR code. They belong to the IAM user the assistant created for this device, and afterwards they live only in the keychain.";
+"setup.finish"         = "Set up mailbox";
+"setup.scan"           = "Scan code";
+"setup.whereIsTheCode" = "The assistant on your computer shows the code under “Add device”.";
+"setup.orPaste"        = "… or paste the code here";
+"setup.next"           = "Continue";

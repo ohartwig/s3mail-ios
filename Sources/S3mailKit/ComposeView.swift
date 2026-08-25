@@ -143,8 +143,9 @@ final class ComposeModel {
     }
 }
 
-/// Short for the catalogue lookup. The bundle has to be named explicitly:
-/// inside a package, `.main` is the app's bundle and not this one.
-func t(_ key: String) -> String {
+/// Short for the catalogue lookup, and public so the app above uses the same
+/// catalogue rather than starting a second one. The bundle has to be named
+/// explicitly: inside a package, `.main` is the app's bundle and not this one.
+public func t(_ key: String) -> String {
     NSLocalizedString(key, bundle: .module, comment: "")
 }

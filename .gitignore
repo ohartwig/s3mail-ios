@@ -1,6 +1,11 @@
-# Das XCFramework wird gebaut, nicht eingecheckt: 26 MB, und es ist nur so
-# aktuell wie der Kern, aus dem es kam. `make framework` baut es neu.
+# The XCFramework is built, not committed: 26 MB, and it is only ever as
+# current as the core it came from. `make framework` rebuilds it.
 S3mailCore.xcframework/
 .build/
 .swiftpm/
 DerivedData/
+
+# Xcode's per-user state. The shared scheme under xcshareddata belongs in the
+# repository - without it the Mac runner finds no scheme to build.
+xcuserdata/
+*.xcuserdatad

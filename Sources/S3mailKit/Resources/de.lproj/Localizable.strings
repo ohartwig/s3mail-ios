@@ -48,3 +48,18 @@
 "setup.notAMailbox"      = "Dieser Code trägt kein Postfach.";
 "setup.missingField"     = "Dem Code fehlt %@.";
 "setup.prefixNotAFolder" = "Das Präfix %@ endet nicht auf einem Schrägstrich – S3 läse es als Anfang eines Namens, nicht als Ordner.";
+
+"setup.mailbox"        = "Postfach";
+"setup.bucket"         = "Bucket";
+"setup.prefix"         = "Präfix";
+"setup.region"         = "Region";
+"setup.from"           = "Absender";
+"setup.deviceAccess"   = "Zugang dieses Geräts";
+"setup.accessKey"      = "Access Key ID";
+"setup.secret"         = "Secret Access Key";
+"setup.keysNotInCode"  = "Die Schlüssel stehen nicht im QR-Code. Sie gehören dem IAM-Benutzer, den der Assistent für dieses Gerät angelegt hat, und liegen danach nur im Schlüsselbund.";
+"setup.finish"         = "Postfach einrichten";
+"setup.scan"           = "Code scannen";
+"setup.whereIsTheCode" = "Der Assistent auf dem Rechner zeigt den Code unter „Gerät hinzufügen“.";
+"setup.orPaste"        = "… oder den Code hier einsetzen";
+"setup.next"           = "Weiter";

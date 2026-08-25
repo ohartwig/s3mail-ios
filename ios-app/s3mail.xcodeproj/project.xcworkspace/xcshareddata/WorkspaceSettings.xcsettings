@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Without this Xcode invents a second scheme with the same name as the
+	     shared one, and xcodebuild picks the invented one - which knows nothing
+	     about the test target. The symptom is "Scheme s3mail is not currently
+	     configured for the test action" while the scheme in the repository is
+	     configured for exactly that. -->
+	<key>IDEWorkspaceSharedSettings_AutocreateContextsIfNeeded</key>
+	<false/>
+</dict>
+</plist>
