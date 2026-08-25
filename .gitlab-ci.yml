@@ -39,7 +39,14 @@ variables:
   # Warum nicht als Version: seine go.mod steht unter go/, der Modulpfad zeigt
   # aber auf das Wurzelverzeichnis - ein `go get` auf den Tag findet dort nichts.
   # Steht ausführlich in mobile/go.mod.
-  CORE_REPO: "${CI_SERVER_URL}/development/s3mail/s3mail.git"
+  # Mit dem Job-Token, nicht ohne: der Kern ist nicht oeffentlich, und ein
+  # `git clone` ohne Anmeldung fragt nach einem Benutzernamen, den niemand
+  # eintippt ("could not read Username" - genau so gescheitert).
+  #
+  # Dafuer muss dieses Projekt in der Job-Token-Allowlist des Kerns stehen.
+  # Sonst kommt statt der Frage nach dem Benutzernamen ein 403, was dasselbe
+  # Ergebnis mit einer anderen Meldung ist.
+  CORE_REPO: "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/development/s3mail/s3mail.git"
   CORE_REF: "main"
 
 # --------------------------------------------------------------------------- #
