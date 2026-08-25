@@ -1,0 +1,154 @@
+# SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
+#
+# Pipeline für s3mail-ios.
+#
+# Sie zerfällt in zwei Hälften, und die Trennung ist der ganze Punkt:
+#
+#   * Die **Go-Seite der Brücke** braucht keinen Mac. Formatierung, vet und ein
+#     Bau für iOS-arm64 laufen auf dem gewöhnlichen Linux-Runner. Das ist der
+#     Teil, in dem die Fehler entstehen, die man ohne Xcode findet - eine
+#     Signatur, die sich geändert hat, ein Feld, das die Fassade nicht mehr
+#     kennt.
+#
+#   * Alles mit Xcode braucht einen Mac. Diese Jobs tragen `tags: [mac]` und
+#     laufen **nur**, wenn `MAC_RUNNER` gesetzt ist. Ohne den Runner blieben sie
+#     sonst hängen und jede Pipeline stünde auf "stuck" - eine rote Ampel, die
+#     nichts über den Code aussagt.
+#
+# Wenn der Mac-Runner steht: Projektvariable `MAC_RUNNER = yes` setzen. Der
+# Runner braucht Tag `mac` und ausdrücklich **kein** "run untagged jobs" - sonst
+# nimmt er die Linux-Jobs des ganzen Bestands an und ist damit beschäftigt,
+# während niemand eine App baut.
+
+stages:
+  - test
+  - build
+
+variables:
+  # Dasselbe goldene Bild wie im Kern. Zwei Go-Versionen für dasselbe Programm
+  # wären zwei Möglichkeiten, unterschiedliche Ergebnisse zu bekommen.
+  GO_IMAGE: "registry.ole-hartwig.eu/devops/images/golang:1.27"
+  # Ein eigener Job holt den Kern, weil das Go-Bild kein git hat - es ist ein
+  # minimales Wolfi-Bild und traegt genau das, was Go braucht. Das ist richtig
+  # so; die Antwort ist ein Bild mit git, nicht ein Bild mit allem.
+  GIT_IMAGE: "registry.ole-hartwig.eu/devops/images/git:2.55"
+  GOTOOLCHAIN: "local"
+  # readonly und nicht mod: mit -mod=mod darf der Bau go.mod und go.sum
+  # stillschweigend aendern, statt an einer fehlenden Abhaengigkeit zu
+  # scheitern. Die CI reparierte dann ein Problem, statt es zu melden, und der
+  # Auscheck auf dem Rechner bliebe kaputt. Der Kern haelt es genauso.
+  GOFLAGS: "-mod=readonly"
+  GOPATH: "${CI_PROJECT_DIR}/.go"
+  # Der Kern liegt als Schwesterverzeichnis, weil mobile/go.mod ihn so erwartet.
+  # Warum nicht als Version: seine go.mod steht unter go/, der Modulpfad zeigt
+  # aber auf das Wurzelverzeichnis - ein `go get` auf den Tag findet dort nichts.
+  # Steht ausführlich in mobile/go.mod.
+  # Mit dem Job-Token, nicht ohne: der Kern ist nicht oeffentlich, und ein
+  # `git clone` ohne Anmeldung fragt nach einem Benutzernamen, den niemand
+  # eintippt ("could not read Username" - genau so gescheitert).
+  #
+  # Dafuer muss dieses Projekt in der Job-Token-Allowlist des Kerns stehen.
+  # Sonst kommt statt der Frage nach dem Benutzernamen ein 403, was dasselbe
+  # Ergebnis mit einer anderen Meldung ist.
+  CORE_REPO: "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/development/s3mail/s3mail.git"
+  CORE_REF: "main"
+
+# --------------------------------------------------------------------------- #
+# Der Kern
+# --------------------------------------------------------------------------- #
+# Als eigener Job und nicht als before_script, weil das Go-Bild kein git
+# mitbringt. Das Ergebnis geht als Artefakt weiter - unter core/, denn ein
+# Artefakt kann nur aus dem Projektverzeichnis kommen. Die Jobs, die ihn
+# brauchen, schieben ihn danach an die Stelle, an der mobile/go.mod ihn erwartet.
+core:
+  stage: test
+  image: ${GIT_IMAGE}
+  variables:
+    GIT_STRATEGY: none # das eigene Repo braucht dieser Job gar nicht
+  script:
+    - git clone --depth 1 --branch "${CORE_REF}" "${CORE_REPO}" core
+    - git -C core rev-parse --short HEAD
+  artifacts:
+    paths:
+      - core/go
+    expire_in: 1 day
+
+# --------------------------------------------------------------------------- #
+# Die Brücke, ohne Mac
+# --------------------------------------------------------------------------- #
+bridge:
+  stage: build
+  image: ${GO_IMAGE}
+  needs: [core]
+  cache:
+    key:
+      files:
+        - mobile/go.sum
+    paths:
+      - .go/pkg/mod
+  before_script:
+    # Neben den Auscheck, nicht hinein: mobile/go.mod erwartet den Kern als
+    # Schwesterverzeichnis, damit dasselbe replace lokal und hier gilt.
+    - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"
+    - cd mobile
+  script:
+    - test -z "$(gofmt -l .)" || { echo "nicht formatiert:"; gofmt -l .; exit 1; }
+    - go vet ./...
+    # Gebaut wird für Linux, nicht für iOS - und das ist keine Nachlässigkeit,
+    # sondern das, was hier überhaupt geht: `GOOS=ios` verlangt CGO und damit
+    # eine clang-Toolchain mit iOS-SDK. Auf einem Mac ist die da, auf dem
+    # Linux-Runner nicht, und der Job scheiterte an der Umgebung statt am Code.
+    #
+    # Für iOS baut der framework-Job auf dem Mac. Was dieser Job leistet, ist
+    # der Teil, der ohne Xcode zu haben ist: dass die Fassade den Kern noch
+    # kennt, dass keine Signatur weggewandert ist, dass nichts unformatiert
+    # hereinkommt. Genau dort entstehen die Fehler, für die man sonst zwanzig
+    # Minuten auf einen Mac wartet.
+    - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./...
+
+# --------------------------------------------------------------------------- #
+# Alles mit Xcode
+# --------------------------------------------------------------------------- #
+.mac:
+  tags: [mac]
+  rules:
+    # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
+    # "stuck" steht und nichts über den Code aussagt.
+    - if: $MAC_RUNNER == "yes"
+  needs: [core]
+  before_script:
+    # rm zuerst: der Mac-Runner behaelt sein Arbeitsverzeichnis zwischen Laeufen,
+    # und ein mv auf etwas Vorhandenes scheitert beim zweiten Mal.
+    - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"
+
+framework:
+  extends: .mac
+  stage: build
+  script:
+    - make framework
+  artifacts:
+    paths:
+      - S3mailCore.xcframework
+    expire_in: 1 day
+
+package:
+  extends: .mac
+  stage: build
+  needs: [core, framework]
+  script:
+    # Die Tests gegen ein echtes Postfach überspringen sich ohne Zugangsdaten
+    # still. Das ist hier richtig: die Pipeline soll nicht in fremde Post sehen.
+    # Wer sie laufen lassen will, setzt TEST_RUNNER_S3MAIL_* als geschützte
+    # Variablen - das Präfix ist Pflicht, xcodebuild reicht nichts anderes an
+    # das Testbündel weiter.
+    - make test
+
+app:
+  extends: .mac
+  stage: build
+  needs: [core, framework]
+  script:
+    # Der Simulator verlangt keine Signatur, und ein Signaturschlüssel auf dem
+    # Bau-Runner wäre ein Schlüssel mehr, der dort nichts zu suchen hat.
+    # Signiert wird beim Verteilen, nicht beim Prüfen.
+    - make app-test

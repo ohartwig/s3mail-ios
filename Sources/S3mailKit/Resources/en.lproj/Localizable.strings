@@ -1,0 +1,87 @@
+/* SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
+   SPDX-License-Identifier: Apache-2.0
+
+   The system folders carry a translation key, not a label - core/folder.go says
+   why: the name is an S3 prefix and must never be translated, or a client in
+   another language stops finding the mail a colleague filed.
+
+   A folder somebody made themselves is not in here, and NSLocalizedString
+   answers with the key it was given. So "Rechnungen" comes back as
+   "Rechnungen", which is exactly right. */
+
+"folder.inbox"   = "Inbox";
+"folder.drafts"  = "Drafts";
+"folder.sent"    = "Sent";
+"folder.archive" = "Archive";
+"folder.spam"    = "Spam";
+"folder.trash"   = "Trash";
+
+/* Why a mail could not be sent. The bridge names the case; the sentence is
+   here, in the language the phone is set to. */
+"compose.no_recipient"      = "No recipient given.";
+"compose.no_sender"         = "This mailbox has no sender address.";
+"compose.too_large"         = "The message is larger than SES accepts.";
+"compose.send_not_permitted" = "This device may read the mailbox, but not send. Sending has to be allowed for its access key.";
+"compose.send_refused"      = "SES did not accept the message.";
+"compose.bad_draft"         = "The message could not be read.";
+
+/* The mail is out of the house. Everything here happened afterwards and none of
+   it is a reason to send again. */
+"compose.send_not_recorded" = "Sent. The attempt could not be recorded beforehand - if the app closes now, nobody will ask about it.";
+"compose.sent_not_stored"   = "Sent. The copy did not reach the sent folder.";
+"compose.draft_not_removed" = "Sent. The draft is still there.";
+
+"compose.title"    = "New message";
+"compose.to"       = "To";
+"compose.cc"       = "Cc";
+"compose.bcc"      = "Bcc";
+"compose.subject"  = "Subject";
+"compose.send"     = "Send";
+"compose.save"     = "Save draft";
+"compose.discard"  = "Discard";
+"compose.sending"  = "Sending…";
+
+/* Asked on start, about a send whose end nobody saw. The question has to be put
+   to a person: guessing "sent" loses a mail, guessing "not sent" sends it
+   twice. */
+"pending.title"    = "Did this go out?";
+"pending.body"     = "The app stopped while sending this message. Look in your sent mail: is it there?";
+"pending.yes"      = "It was sent";
+"pending.no"       = "Put it back in drafts";
+
+/* The mailbox on screen. */
+"mailbox.title"        = "Mailbox";
+"mailbox.noSelection"  = "No message selected";
+"mailbox.noAccess"     = "No access";
+"mailbox.searchPrompt" = "from: subject: after: is:unread";
+"mailbox.compose"      = "New message";
+
+"message.htmlOnly"     = "This mail has only an HTML part. It is not shown yet.";
+"message.unreadable"   = "Cannot be read";
+"message.spam"         = "Spam";
+"message.authFailed"   = "Sender unverified";
+
+/* Reading the QR code that sets a device up. */
+"setup.notAMailbox"      = "This code does not carry a mailbox.";
+"setup.missingField"     = "The code is missing %@.";
+"setup.prefixNotAFolder" = "The prefix %@ does not end in a slash - S3 would read it as the start of a name, not a folder.";
+
+/* Setting a device up from the code the desktop assistant shows. */
+"setup.mailbox"        = "Mailbox";
+"setup.bucket"         = "Bucket";
+"setup.prefix"         = "Prefix";
+"setup.region"         = "Region";
+"setup.from"           = "Sender";
+"setup.deviceAccess"   = "This device's access";
+"setup.accessKey"      = "Access Key ID";
+"setup.secret"         = "Secret Access Key";
+"setup.keysNotInCode"  = "The keys are not in the QR code. They belong to the IAM user the assistant created for this device, and afterwards they live only in the keychain.";
+"setup.finish"         = "Set up mailbox";
+"setup.scan"           = "Scan code";
+"setup.whereIsTheCode" = "The assistant on your computer shows the code under “Add device”.";
+"setup.orPaste"        = "… or paste the code here";
+"setup.next"           = "Continue";
+
+"compose.reply"    = "Reply";
+"compose.replyAll" = "Reply to all";
+"compose.forward"  = "Forward";

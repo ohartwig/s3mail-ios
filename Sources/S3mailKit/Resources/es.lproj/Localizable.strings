@@ -1,0 +1,69 @@
+/* SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
+   SPDX-License-Identifier: Apache-2.0 */
+
+"folder.inbox"   = "Bandeja de entrada";
+"folder.drafts"  = "Borradores";
+"folder.sent"    = "Enviados";
+"folder.archive" = "Archivo";
+"folder.spam"    = "Spam";
+"folder.trash"   = "Papelera";
+
+"compose.no_recipient"      = "No se indicó ningún destinatario.";
+"compose.no_sender"         = "Este buzón no tiene dirección de remitente.";
+"compose.too_large"         = "El mensaje es mayor de lo que acepta SES.";
+"compose.send_not_permitted" = "Este dispositivo puede leer el buzón, pero no enviar. Hay que permitir el envío para su clave de acceso.";
+"compose.send_refused"      = "SES no aceptó el mensaje.";
+"compose.bad_draft"         = "No se pudo leer el mensaje.";
+
+"compose.send_not_recorded" = "Enviado. No se pudo anotar el intento de antemano: si la aplicación se cierra ahora, nadie preguntará por él.";
+"compose.sent_not_stored"   = "Enviado. La copia no llegó a la carpeta de enviados.";
+"compose.draft_not_removed" = "Enviado. El borrador sigue ahí.";
+
+"compose.title"    = "Mensaje nuevo";
+"compose.to"       = "Para";
+"compose.cc"       = "Cc";
+"compose.bcc"      = "Cco";
+"compose.subject"  = "Asunto";
+"compose.send"     = "Enviar";
+"compose.save"     = "Guardar borrador";
+"compose.discard"  = "Descartar";
+"compose.sending"  = "Enviando…";
+
+"pending.title"    = "¿Llegó a salir?";
+"pending.body"     = "La aplicación se cerró mientras se enviaba este mensaje. Mire en sus mensajes enviados: ¿está ahí?";
+"pending.yes"      = "Sí se envió";
+"pending.no"       = "Devolver a borradores";
+
+"mailbox.title"        = "Buzón";
+"mailbox.noSelection"  = "Ningún mensaje seleccionado";
+"mailbox.noAccess"     = "Sin acceso";
+"mailbox.searchPrompt" = "from: subject: after: is:unread";
+"mailbox.compose"      = "Mensaje nuevo";
+
+"message.htmlOnly"     = "Este correo solo tiene una parte HTML. Todavía no se muestra.";
+"message.unreadable"   = "No se puede leer";
+"message.spam"         = "Spam";
+"message.authFailed"   = "Remitente sin verificar";
+
+"setup.notAMailbox"      = "Este código no contiene ningún buzón.";
+"setup.missingField"     = "Al código le falta %@.";
+"setup.prefixNotAFolder" = "El prefijo %@ no termina en barra: S3 lo leería como el principio de un nombre, no como una carpeta.";
+
+"setup.mailbox"        = "Buzón";
+"setup.bucket"         = "Bucket";
+"setup.prefix"         = "Prefijo";
+"setup.region"         = "Región";
+"setup.from"           = "Remitente";
+"setup.deviceAccess"   = "Acceso de este dispositivo";
+"setup.accessKey"      = "Access Key ID";
+"setup.secret"         = "Secret Access Key";
+"setup.keysNotInCode"  = "Las claves no están en el código QR. Pertenecen al usuario IAM que el asistente creó para este dispositivo, y después solo viven en el llavero.";
+"setup.finish"         = "Configurar buzón";
+"setup.scan"           = "Escanear código";
+"setup.whereIsTheCode" = "El asistente del ordenador muestra el código en «Añadir dispositivo».";
+"setup.orPaste"        = "… o pegue aquí el código";
+"setup.next"           = "Continuar";
+
+"compose.reply"    = "Responder";
+"compose.replyAll" = "Responder a todos";
+"compose.forward"  = "Reenviar";
