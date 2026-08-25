@@ -165,6 +165,38 @@ still, während die Zusammenfassung „passed" meldet:
     TEST_RUNNER_S3MAIL_BUCKET=… TEST_RUNNER_S3MAIL_PREFIX="mail/ole/" \
     make test
 
-Eine Pipeline gibt es noch nicht: dafür braucht es einen Mac-Runner mit Tag
-`mac`, und ausdrücklich **ohne** „run untagged jobs" — sonst nimmt er die
-Linux-Jobs des ganzen Bestands an.
+## Pipeline
+
+Sie zerfällt in zwei Hälften, und die Trennung ist der Punkt:
+
+- **Die Go-Seite der Brücke braucht keinen Mac.** Formatierung, `vet` und ein
+  Bau laufen auf dem gewöhnlichen Linux-Runner. Dort entstehen die Fehler, für
+  die man sonst zwanzig Minuten auf einen Mac wartet: eine Signatur, die sich
+  geändert hat, ein Feld, das die Fassade nicht mehr kennt.
+- **Alles mit Xcode braucht einen Mac.** Diese Jobs tragen `tags: [mac]` und
+  laufen nur, wenn die Projektvariable `MAC_RUNNER = yes` gesetzt ist. Ohne
+  Runner blieben sie hängen, und jede Pipeline stünde auf „stuck" — eine rote
+  Ampel, die nichts über den Code aussagt.
+
+Der Runner braucht Tag `mac` und ausdrücklich **kein** „run untagged jobs" —
+sonst nimmt er die Linux-Jobs des ganzen Bestands an und ist damit beschäftigt,
+während niemand eine App baut.
+
+Für iOS baut die CI **nicht** auf Linux: `GOOS=ios` verlangt CGO und damit eine
+clang-Toolchain mit iOS-SDK. Der Linux-Job baut deshalb für Linux — was er
+prüft, ist die Brücke, nicht das Ziel.
+
+## Der Kern als Schwesterverzeichnis
+
+`mobile/go.mod` zeigt über ein `replace` auf einen Auscheck von
+`development/s3mail/s3mail` **neben** diesem Repo:
+
+    projekte/
+      s3mail/       <- der Kern
+      s3mail-ios/   <- dieses Repo
+
+Nicht als Version, obwohl der Kern getaggt ist: sein Modulpfad zeigt auf das
+Wurzelverzeichnis des Repos, die `go.mod` steht aber unter `go/` — ein `go get`
+auf den Tag fände dort nichts. Der Pfad ist relativ und nicht absolut, sonst
+baut dieses Repo nur auf dem einen Rechner, auf dem es jemand einmal
+eingerichtet hat.

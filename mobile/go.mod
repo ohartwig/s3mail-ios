@@ -9,7 +9,20 @@ module git.ole-hartwig.eu/development/s3mail/ios/mobile
 
 go 1.26.0
 
-replace git.ole-hartwig.eu/development/s3mail/s3mail => /Volumes/Samsung_X5/Projects/S3mail/go
+// Der Kern liegt als Schwesterverzeichnis, nicht als Version.
+//
+// Sein Modulpfad ist git.ole-hartwig.eu/development/s3mail/s3mail, die go.mod
+// steht aber unter go/ - Go suchte sie im Wurzelverzeichnis des Repos und
+// faende nichts. Ein `go get` auf den Tag geht also nicht, solange das so ist.
+//
+// Der Pfad ist relativ und nicht absolut: sonst baut dieses Repo nur auf dem
+// einen Rechner, auf dem jemand es einmal eingerichtet hat. Erwartet wird ein
+// Auscheck von development/s3mail/s3mail als Schwesterverzeichnis:
+//
+//     projekte/
+//       s3mail/       <- der Kern
+//       s3mail-ios/   <- dieses Repo
+replace git.ole-hartwig.eu/development/s3mail/s3mail => ../../s3mail/go
 
 require (
 	git.ole-hartwig.eu/development/s3mail/s3mail v0.0.0
