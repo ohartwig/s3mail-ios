@@ -28,6 +28,10 @@ variables:
   # Dasselbe goldene Bild wie im Kern. Zwei Go-Versionen für dasselbe Programm
   # wären zwei Möglichkeiten, unterschiedliche Ergebnisse zu bekommen.
   GO_IMAGE: "registry.ole-hartwig.eu/devops/images/golang:1.27"
+  # Ein eigener Job holt den Kern, weil das Go-Bild kein git hat - es ist ein
+  # minimales Wolfi-Bild und traegt genau das, was Go braucht. Das ist richtig
+  # so; die Antwort ist ein Bild mit git, nicht ein Bild mit allem.
+  GIT_IMAGE: "registry.ole-hartwig.eu/devops/images/git:2.55"
   GOTOOLCHAIN: "local"
   GOFLAGS: "-mod=mod"
   GOPATH: "${CI_PROJECT_DIR}/.go"
@@ -39,11 +43,32 @@ variables:
   CORE_REF: "main"
 
 # --------------------------------------------------------------------------- #
+# Der Kern
+# --------------------------------------------------------------------------- #
+# Als eigener Job und nicht als before_script, weil das Go-Bild kein git
+# mitbringt. Das Ergebnis geht als Artefakt weiter - unter core/, denn ein
+# Artefakt kann nur aus dem Projektverzeichnis kommen. Die Jobs, die ihn
+# brauchen, schieben ihn danach an die Stelle, an der mobile/go.mod ihn erwartet.
+core:
+  stage: test
+  image: ${GIT_IMAGE}
+  variables:
+    GIT_STRATEGY: none # das eigene Repo braucht dieser Job gar nicht
+  script:
+    - git clone --depth 1 --branch "${CORE_REF}" "${CORE_REPO}" core
+    - git -C core rev-parse --short HEAD
+  artifacts:
+    paths:
+      - core/go
+    expire_in: 1 day
+
+# --------------------------------------------------------------------------- #
 # Die Brücke, ohne Mac
 # --------------------------------------------------------------------------- #
 bridge:
-  stage: test
+  stage: build
   image: ${GO_IMAGE}
+  needs: [core]
   cache:
     key:
       files:
@@ -51,9 +76,9 @@ bridge:
     paths:
       - .go/pkg/mod
   before_script:
-    # Neben den Auscheck, nicht hinein: `git clone` in ein Verzeichnis unterhalb
-    # von CI_PROJECT_DIR landete sonst im Artefakt und im nächsten Cache.
-    - git clone --depth 1 --branch "${CORE_REF}" "${CORE_REPO}" "${CI_PROJECT_DIR}/../s3mail"
+    # Neben den Auscheck, nicht hinein: mobile/go.mod erwartet den Kern als
+    # Schwesterverzeichnis, damit dasselbe replace lokal und hier gilt.
+    - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"
     - cd mobile
   script:
     - test -z "$(gofmt -l .)" || { echo "nicht formatiert:"; gofmt -l .; exit 1; }
@@ -79,8 +104,11 @@ bridge:
     # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
     # "stuck" steht und nichts über den Code aussagt.
     - if: $MAC_RUNNER == "yes"
+  needs: [core]
   before_script:
-    - git clone --depth 1 --branch "${CORE_REF}" "${CORE_REPO}" "${CI_PROJECT_DIR}/../s3mail"
+    # rm zuerst: der Mac-Runner behaelt sein Arbeitsverzeichnis zwischen Laeufen,
+    # und ein mv auf etwas Vorhandenes scheitert beim zweiten Mal.
+    - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"
 
 framework:
   extends: .mac
@@ -95,7 +123,7 @@ framework:
 package:
   extends: .mac
   stage: build
-  needs: [framework]
+  needs: [core, framework]
   script:
     # Die Tests gegen ein echtes Postfach überspringen sich ohne Zugangsdaten
     # still. Das ist hier richtig: die Pipeline soll nicht in fremde Post sehen.
@@ -107,7 +135,7 @@ package:
 app:
   extends: .mac
   stage: build
-  needs: [framework]
+  needs: [core, framework]
   script:
     # Der Simulator verlangt keine Signatur, und ein Signaturschlüssel auf dem
     # Bau-Runner wäre ein Schlüssel mehr, der dort nichts zu suchen hat.
