@@ -27,7 +27,7 @@ struct MessageView: View {
                     header(full)
                     Divider()
                     if full.text.isEmpty && !full.html.isEmpty {
-                        Label("Diese Mail hat nur einen HTML-Teil. Er wird noch nicht angezeigt.",
+                        Label(t("message.htmlOnly"),
                               systemImage: "doc.richtext")
                             .font(.footnote).foregroundStyle(.secondary)
                     } else {
@@ -35,7 +35,7 @@ struct MessageView: View {
                     }
                     if !full.attachments.isEmpty { attachments(full) }
                 } else if let failure {
-                    ContentUnavailableView("Nicht lesbar", systemImage: "exclamationmark.triangle",
+                    ContentUnavailableView(t("message.unreadable"), systemImage: "exclamationmark.triangle",
                                            description: Text(failure))
                 } else {
                     ProgressView()
@@ -58,8 +58,8 @@ struct MessageView: View {
             Text(full.to).font(.footnote).foregroundStyle(.secondary)
             HStack(spacing: 6) {
                 Text(full.date).font(.footnote).foregroundStyle(.secondary)
-                if full.spam { Tag(text: "Spam", bad: true) }
-                if message.authFailed { Tag(text: "Absender ungeprüft", bad: true) }
+                if full.spam { Tag(text: t("message.spam"), bad: true) }
+                if message.authFailed { Tag(text: t("message.authFailed"), bad: true) }
             }
         }
     }

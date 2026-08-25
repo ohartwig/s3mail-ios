@@ -1,0 +1,50 @@
+/* SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
+   SPDX-License-Identifier: Apache-2.0 */
+
+"folder.inbox"   = "Posteingang";
+"folder.drafts"  = "Entwürfe";
+"folder.sent"    = "Gesendet";
+"folder.archive" = "Archiv";
+"folder.spam"    = "Spam";
+"folder.trash"   = "Papierkorb";
+
+"compose.no_recipient"      = "Kein Empfänger angegeben.";
+"compose.no_sender"         = "Dieses Postfach hat keine Absenderadresse.";
+"compose.too_large"         = "Die Nachricht ist größer, als SES annimmt.";
+"compose.send_not_permitted" = "Dieses Gerät darf das Postfach lesen, aber nicht senden. Dafür muss das Senden für seinen Zugangsschlüssel erlaubt werden.";
+"compose.send_refused"      = "SES hat die Nachricht nicht angenommen.";
+"compose.bad_draft"         = "Die Nachricht konnte nicht gelesen werden.";
+
+"compose.send_not_recorded" = "Verschickt. Der Versuch ließ sich vorher nicht vermerken – wenn die App jetzt schließt, fragt niemand danach.";
+"compose.sent_not_stored"   = "Verschickt. Die Kopie ist nicht im Ordner „Gesendet“ angekommen.";
+"compose.draft_not_removed" = "Verschickt. Der Entwurf steht noch da.";
+
+"compose.title"    = "Neue Nachricht";
+"compose.to"       = "An";
+"compose.cc"       = "Kopie";
+"compose.bcc"      = "Blindkopie";
+"compose.subject"  = "Betreff";
+"compose.send"     = "Senden";
+"compose.save"     = "Entwurf sichern";
+"compose.discard"  = "Verwerfen";
+"compose.sending"  = "Wird gesendet …";
+
+"pending.title"    = "Ist die rausgegangen?";
+"pending.body"     = "Die App wurde beendet, während diese Nachricht verschickt wurde. Sehen Sie in Ihren gesendeten Mails nach: steht sie dort?";
+"pending.yes"      = "Wurde verschickt";
+"pending.no"       = "Zurück in die Entwürfe";
+
+"mailbox.title"        = "Postfach";
+"mailbox.noSelection"  = "Keine Nachricht gewählt";
+"mailbox.noAccess"     = "Kein Zugriff";
+"mailbox.searchPrompt" = "from: subject: after: is:unread";
+"mailbox.compose"      = "Neue Nachricht";
+
+"message.htmlOnly"     = "Diese Mail hat nur einen HTML-Teil. Er wird noch nicht angezeigt.";
+"message.unreadable"   = "Nicht lesbar";
+"message.spam"         = "Spam";
+"message.authFailed"   = "Absender ungeprüft";
+
+"setup.notAMailbox"      = "Dieser Code trägt kein Postfach.";
+"setup.missingField"     = "Dem Code fehlt %@.";
+"setup.prefixNotAFolder" = "Das Präfix %@ endet nicht auf einem Schrägstrich – S3 läse es als Anfang eines Namens, nicht als Ordner.";

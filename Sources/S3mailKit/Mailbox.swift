@@ -61,12 +61,30 @@ public final class Mailbox {
 
     public struct Folder: Decodable, Identifiable, Hashable {
         public let name: String
+        /// A translation key for the system folders ("folder.sent"), and the
+        /// plain name for one somebody made themselves. See `title`.
         public let label: String
         public let icon: String
         public let count: Int
         public let unread: Int
 
         public var id: String { name }
+
+        /// What to put on the screen.
+        ///
+        /// `label` is not it. core/folder.go hands out a key rather than a word
+        /// on purpose: the folder name is an S3 prefix and must never be
+        /// translated, or a client set to another language stops finding the
+        /// mail a colleague filed. The desktop looks the key up per request;
+        /// this is the same lookup.
+        ///
+        /// A folder somebody made themselves is not in the catalogue, and
+        /// NSLocalizedString answers with the key it was handed - so
+        /// "Rechnungen" comes back as "Rechnungen". The fallback is the
+        /// feature, not an accident.
+        public var title: String {
+            NSLocalizedString(label, bundle: .module, comment: "a folder name")
+        }
     }
 
     public struct Full: Decodable, Equatable {
@@ -169,6 +187,60 @@ public final class Mailbox {
 
     public func read(key: String) throws -> Full {
         try decode { err in inner.read(key, error: err) }
+    }
+
+    // MARK: - Writing and sending
+
+    /// Whether this device was given a sender address. A phone handed a
+    /// read-only key has none, and the compose button should not be there at
+    /// all rather than fail when tapped.
+    public var canSend: Bool { inner.canSend() }
+
+    /// Stores a draft in the bucket and answers with its key. Put that key into
+    /// the draft before saving again, or every autosave leaves another
+    /// half-written mail in the folder.
+    @discardableResult
+    public func save(_ draft: Draft) throws -> String {
+        struct Saved: Decodable { let key: String }
+        let saved: Saved = try decode { err in
+            inner.saveDraft(try? encode(draft), error: err)
+        }
+        return saved.key
+    }
+
+    public func dropDraft(key: String) throws {
+        try inner.dropDraft(key)
+    }
+
+    /// Hands the message to SES.
+    ///
+    /// A `SendResult` with a warning is still a success - the mail is out. Show
+    /// the warning, never the failure: somebody who reads "failed" sends it a
+    /// second time, and that is the one mistake this whole path exists to
+    /// prevent.
+    public func send(_ draft: Draft) throws -> SendResult {
+        do {
+            return try decode { err in inner.send(try? encode(draft), error: err) }
+        } catch {
+            throw ComposeError.from(error)
+        }
+    }
+
+    /// Sends that started and whose end nobody witnessed. Ask on every start;
+    /// the app has to put the question to the person, because guessing either
+    /// way is wrong in a different direction.
+    public func pendingSends() throws -> [PendingSend] {
+        try decode(inner.pendingSends)
+    }
+
+    /// Records the answer. `sent: true` files the copy and closes the marker,
+    /// `false` puts the message back among the drafts.
+    public func resolve(pending key: String, sent: Bool) throws {
+        try inner.resolveSending(key, sent: sent)
+    }
+
+    private func encode(_ draft: Draft) throws -> String {
+        String(data: try JSONEncoder().encode(draft), encoding: .utf8) ?? "{}"
     }
 
     /// Every call across the bridge answers in JSON and reports errors through

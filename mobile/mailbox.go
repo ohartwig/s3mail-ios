@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+
 	"git.ole-hartwig.eu/development/s3mail/s3mail/awsx"
 	"git.ole-hartwig.eu/development/s3mail/s3mail/core"
 	"git.ole-hartwig.eu/development/s3mail/s3mail/mimeparse"
@@ -29,6 +31,10 @@ import (
 type Mailbox struct {
 	inner *store.Mailbox
 	setup setupPayload
+	// cfg is kept so the SES client can be built later, if it is ever needed.
+	// See compose.go: a device that only reads never builds one.
+	cfg    aws.Config
+	sender *awsx.SES
 }
 
 type setupPayload struct {
@@ -71,7 +77,7 @@ func Open(setupJSON, cacheDir string) (*Mailbox, error) {
 	// The trash is a folder, and emptying it is a decision for the desk.
 	inner := store.NewMailbox(ctx(), awsx.NewS3(cfg, ""), awsx.NewKMS(cfg, ""),
 		s.Bucket, prefix, cacheDir, nil, false)
-	return &Mailbox{inner: inner, setup: s}, nil
+	return &Mailbox{inner: inner, setup: s, cfg: cfg}, nil
 }
 
 // Refresh lists the bucket and fetches what changed. Answers with the counts,

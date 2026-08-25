@@ -52,11 +52,11 @@ public struct Setup: Codable, Equatable {
         public var errorDescription: String? {
             switch self {
             case .notJSON:
-                return "This code does not carry a mailbox."
+                return t("setup.notAMailbox")
             case .missing(let field):
-                return "The code is missing \(field)."
+                return String(format: t("setup.missingField"), field)
             case .prefixNotAFolder(let prefix):
-                return "The prefix \(prefix) does not end in a slash - S3 would read it as the start of a name, not a folder."
+                return String(format: t("setup.prefixNotAFolder"), prefix)
             }
         }
     }

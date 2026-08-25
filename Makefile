@@ -1,21 +1,21 @@
 # SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
 # SPDX-License-Identifier: Apache-2.0
 
-# Der Go-Kern kommt als XCFramework herein. Er wird gebaut und nicht
-# eingecheckt: 26 MB, und ein eingechecktes Binaerpaket ist nur so aktuell wie
-# der Tag, an dem es jemand gebaut hat.
+# The Go core arrives as an XCFramework. It is built, not committed: 26 MB, and
+# a committed binary package is only ever as current as the day somebody built
+# it.
 #
-# Voraussetzungen: Xcode mit iOS-SDK, Go, und gomobile:
+# Needs: Xcode with the iOS SDK, Go, and gomobile:
 #   go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init
 
-KERN ?= ../S3mail/go
+CORE ?= ../S3mail/go
 
 .PHONY: framework test clean
 
 framework:
 	cd mobile && PATH="$$HOME/go/bin:$$PATH" gomobile bind -target=ios -o ../S3mailCore.xcframework .
 
-# Braucht eine iOS-Simulator-Laufzeit: xcodebuild -downloadPlatform iOS
+# Needs an iOS simulator runtime: xcodebuild -downloadPlatform iOS
 test: framework
 	xcodebuild test -scheme S3mailKit -destination 'platform=iOS Simulator,name=iPhone 17' | tail -20
 

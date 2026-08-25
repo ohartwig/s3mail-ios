@@ -118,3 +118,108 @@ final class MessageDecodingTests: XCTestCase {
         XCTAssertTrue(full.attachments.isEmpty)
     }
 }
+
+/// Writing, against a real bucket.
+///
+/// Storing a draft is a real write into a real mailbox, and every one of these
+/// cleans up after itself. Sending is deliberately not here: a test that puts
+/// mail in somebody's inbox on every run is a test people switch off.
+final class ComposeAgainstTheBucketTests: XCTestCase {
+
+    /// Unlike the reading tests, this one needs a sender address.
+    ///
+    /// Not a shortcoming of the test: a draft is a real MIME message and a MIME
+    /// message has a From header. That is also why the app shows no compose
+    /// button on a device whose setup carries no sender - `Mailbox.canSend` is
+    /// false, and a button that fails when tapped is worse than no button.
+    ///
+    /// The address is never used to send here. Nothing in this file hands
+    /// anything to SES.
+    private func mailbox() throws -> Mailbox {
+        let env = ProcessInfo.processInfo.environment
+        guard let key = env["S3MAIL_KEY"], let secret = env["S3MAIL_SECRET"],
+              let region = env["S3MAIL_REGION"], let bucket = env["S3MAIL_BUCKET"] else {
+            throw XCTSkip("no credentials in the environment")
+        }
+        let from = env["S3MAIL_FROM"] ?? "drafts@example.invalid"
+        return try Mailbox(setup: Setup(bucket: bucket, prefix: env["S3MAIL_PREFIX"] ?? "",
+                                        region: region, from: from,
+                                        accessKey: key, secret: secret))
+    }
+
+    func testWithoutASenderNothingCanBeWritten() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let key = env["S3MAIL_KEY"], let secret = env["S3MAIL_SECRET"],
+              let region = env["S3MAIL_REGION"], let bucket = env["S3MAIL_BUCKET"] else {
+            throw XCTSkip("no credentials in the environment")
+        }
+        let mb = try Mailbox(setup: Setup(bucket: bucket, prefix: env["S3MAIL_PREFIX"] ?? "",
+                                          region: region, accessKey: key, secret: secret))
+        XCTAssertFalse(mb.canSend, "no sender address, so no compose button")
+        var draft = Draft()
+        draft.to = "nobody@example.invalid"
+        draft.body = "x"
+        XCTAssertThrowsError(try mb.save(draft)) { error in
+            XCTAssertEqual((error as NSError).localizedDescription, "no_sender")
+        }
+    }
+
+    func testADraftIsAMessageInTheBucket() throws {
+        let mb = try mailbox()
+        var draft = Draft()
+        draft.to = "nobody@example.invalid"
+        draft.subject = "s3mail-ios draft test \(UUID().uuidString.prefix(8))"
+        draft.body = "Written by a test. If this is in your drafts, the test did not finish."
+
+        let key = try mb.save(draft)
+        XCTAssertFalse(key.isEmpty)
+        // The point of drafts living in the bucket: nothing app-local was
+        // written, so the desk sees this too.
+        XCTAssertTrue(key.contains("/drafts/"), "a draft belongs in the drafts folder, got \(key)")
+
+        defer { try? mb.dropDraft(key: key) }
+
+        _ = try mb.refresh()
+        let drafts = try mb.search("", folder: "drafts", limit: 200)
+        XCTAssertTrue(drafts.contains { $0.subject == draft.subject },
+                      "the draft was stored but does not show in the folder")
+
+        let full = try mb.read(key: key)
+        XCTAssertEqual(full.subject, draft.subject)
+        XCTAssertTrue(full.text.contains("Written by a test"))
+    }
+
+    func testSavingTwiceLeavesOneDraft() throws {
+        // The name comes from the Message-ID, so an autosave every few seconds
+        // must not leave a trail of half-written mails in the folder.
+        let mb = try mailbox()
+        var draft = Draft()
+        draft.to = "nobody@example.invalid"
+        draft.subject = "s3mail-ios autosave test \(UUID().uuidString.prefix(8))"
+        draft.body = "one"
+
+        let first = try mb.save(draft)
+        draft.draftKey = first
+        draft.body = "two"
+        let second = try mb.save(draft)
+        defer {
+            try? mb.dropDraft(key: second)
+            if first != second { try? mb.dropDraft(key: first) }
+        }
+
+        _ = try mb.refresh()
+        let mine = try mb.search("", folder: "drafts", limit: 200)
+            .filter { $0.subject == draft.subject }
+        XCTAssertEqual(mine.count, 1, "autosaving left \(mine.count) drafts behind")
+        XCTAssertTrue(try mb.read(key: second).text.contains("two"),
+                      "the newer text did not win")
+    }
+
+    func testNothingIsPendingOnAQuietMailbox() throws {
+        // RecoverSends closes what it can decide by itself. What it returns is
+        // only what a person has to answer - and on a mailbox nobody was
+        // sending from, that is nothing.
+        let mb = try mailbox()
+        XCTAssertEqual(try mb.pendingSends().count, 0)
+    }
+}

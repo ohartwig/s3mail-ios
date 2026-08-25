@@ -30,7 +30,10 @@ public final class MailboxModel {
     public var folder: String = "" { didSet { if folder != oldValue { reload() } } }
     public var query: String = ""
 
-    private let mailbox: Mailbox
+    /// Readable from the view, because writing a mail and asking about an
+    /// unfinished send both go straight to the mailbox - putting a second copy
+    /// of those calls in here would only be a longer way to the same place.
+    let mailbox: Mailbox
 
     public init(mailbox: Mailbox) {
         self.mailbox = mailbox
