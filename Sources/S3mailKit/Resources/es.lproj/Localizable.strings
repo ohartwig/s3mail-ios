@@ -63,3 +63,7 @@
 "setup.whereIsTheCode" = "El asistente del ordenador muestra el código en «Añadir dispositivo».";
 "setup.orPaste"        = "… o pegue aquí el código";
 "setup.next"           = "Continuar";
+
+"compose.reply"    = "Responder";
+"compose.replyAll" = "Responder a todos";
+"compose.forward"  = "Reenviar";

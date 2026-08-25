@@ -64,20 +64,36 @@ public struct Draft: Codable, Equatable, Identifiable {
     public init() {}
 
     /// A reply, with the quoting left to the core. The subject prefix and the
-    /// threading headers are its job too - this only says which message and
-    /// which way.
-    public static func replying(to message: Mailbox.Message, all: Bool = false) -> Draft {
+    /// threading headers are its job too - this only says which message, which
+    /// way, and to whom.
+    ///
+    /// The recipient comes from Reply-To when there is one. Mailing lists and
+    /// ticket systems set it, and an answer that ignores it lands with whoever
+    /// pressed send instead of with the list.
+    ///
+    /// Reply-all puts the original To and Cc into Cc - **including your own
+    /// address**, and that is on purpose: it is exactly what the desktop does
+    /// (`compose(kind, all)` in inbox.html). Two clients on the same mailbox
+    /// behaving differently is worse than either behaviour, and if this should
+    /// change it should change in both places.
+    public static func replying(to full: Mailbox.Full, key: String,
+                                all: Bool = false) -> Draft {
         var d = Draft()
         d.mode = .reply
-        d.key = message.key
-        d.to = message.from
+        d.key = key
+        d.to = full.replyTo.isEmpty ? full.from : full.replyTo
+        if all {
+            d.cc = [full.to, full.cc].filter { !$0.isEmpty }.joined(separator: ", ")
+        }
         return d
     }
 
-    public static func forwarding(_ message: Mailbox.Message) -> Draft {
+    /// A forward. No recipient - somebody has to say where it goes, and a
+    /// prefilled one is how a mail ends up with the wrong person.
+    public static func forwarding(_ key: String) -> Draft {
         var d = Draft()
         d.mode = .forward
-        d.key = message.key
+        d.key = key
         return d
     }
 

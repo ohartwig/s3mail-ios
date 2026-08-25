@@ -137,7 +137,11 @@ func (m *Mailbox) Read(key string) (string, error) {
 	}
 	return asJSON(map[string]any{
 		"subject": full.Subject, "from": full.From, "to": full.To, "cc": full.Cc,
-		"date": full.Date, "text": full.Text, "html": full.HTML,
+		// Reply-To goes along because a reply has to obey it. Mailing lists and
+		// ticket systems set it, and an answer that ignores it lands with the
+		// person who happened to press send instead of with the list.
+		"reply_to": full.ReplyTo,
+		"date":     full.Date, "text": full.Text, "html": full.HTML,
 		"spam": full.Spam, "virus": full.Virus, "auth": full.Auth,
 		"unsubscribe": full.Unsub, "attachments": names,
 	})

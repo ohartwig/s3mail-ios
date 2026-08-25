@@ -19,6 +19,7 @@ struct MessageView: View {
 
     @State private var full: Mailbox.Full?
     @State private var failure: String?
+    @State private var writing: Draft?
 
     var body: some View {
         ScrollView {
@@ -43,6 +44,31 @@ struct MessageView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // Only once the message is read: replying needs its Reply-To and its
+        // recipients, and a button that is there before them would answer to
+        // the wrong people.
+        .toolbar {
+            if let full, model.mailbox.canSend {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(t("compose.reply"), systemImage: "arrowshape.turn.up.left") {
+                            writing = .replying(to: full, key: message.key)
+                        }
+                        Button(t("compose.replyAll"), systemImage: "arrowshape.turn.up.left.2") {
+                            writing = .replying(to: full, key: message.key, all: true)
+                        }
+                        Button(t("compose.forward"), systemImage: "arrowshape.turn.up.right") {
+                            writing = .forwarding(message.key)
+                        }
+                    } label: {
+                        Label(t("compose.reply"), systemImage: "arrowshape.turn.up.left")
+                    }
+                }
+            }
+        }
+        .sheet(item: $writing) { draft in
+            ComposeView(mailbox: model.mailbox, draft: draft)
         }
         .task(id: message.key) {
             full = nil; failure = nil

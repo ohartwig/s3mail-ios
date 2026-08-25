@@ -55,15 +55,48 @@ final class ComposeTests: XCTestCase {
         XCTAssertTrue(d.isWorthKeeping)
     }
 
+    private func full(_ json: String) throws -> Mailbox.Full {
+        try JSONDecoder().decode(Mailbox.Full.self, from: json.data(using: .utf8)!)
+    }
+
     func testAReplyKeepsTheOriginalForTheCore() throws {
-        let json = #"{"key":"mail/ole/inbox/a.eml","from":"Anna <anna@x.de>"}"#
-        let message = try JSONDecoder().decode(Mailbox.Message.self,
-                                               from: json.data(using: .utf8)!)
-        let d = Draft.replying(to: message)
+        let message = try full(#"{"from":"Anna <anna@x.de>","subject":"Hallo"}"#)
+        let d = Draft.replying(to: message, key: "mail/ole/inbox/a.eml")
         XCTAssertEqual(d.mode, .reply)
         XCTAssertEqual(d.key, "mail/ole/inbox/a.eml",
                        "without the key the core cannot thread the reply")
         XCTAssertEqual(d.to, "Anna <anna@x.de>")
+        XCTAssertEqual(d.cc, "", "a plain reply does not copy anybody")
+    }
+
+    func testAReplyObeysReplyTo() throws {
+        // Mailing lists and ticket systems set it. An answer that ignores it
+        // lands with whoever pressed send instead of with the list.
+        let message = try full(#"{"from":"Anna <anna@x.de>","reply_to":"list@x.de"}"#)
+        XCTAssertEqual(Draft.replying(to: message, key: "k").to, "list@x.de")
+    }
+
+    func testReplyingToAllCopiesTheOtherRecipients() throws {
+        let message = try full(
+            #"{"from":"anna@x.de","to":"ole@y.de, bea@z.de","cc":"chef@z.de"}"#)
+        let d = Draft.replying(to: message, key: "k", all: true)
+        XCTAssertEqual(d.to, "anna@x.de")
+        XCTAssertEqual(d.cc, "ole@y.de, bea@z.de, chef@z.de")
+    }
+
+    func testReplyingToAllWithNoOtherRecipientsLeavesCcEmpty() throws {
+        // filter, not join-with-empties: otherwise Cc becomes ", " and the core
+        // rejects the address list.
+        let message = try full(#"{"from":"anna@x.de"}"#)
+        XCTAssertEqual(Draft.replying(to: message, key: "k", all: true).cc, "")
+    }
+
+    func testAForwardHasNoRecipient() throws {
+        // A prefilled one is how a mail ends up with the wrong person.
+        let d = Draft.forwarding("mail/ole/inbox/a.eml")
+        XCTAssertEqual(d.mode, .forward)
+        XCTAssertEqual(d.to, "")
+        XCTAssertEqual(d.key, "mail/ole/inbox/a.eml")
     }
 
     func testAWarningIsStillASuccess() throws {

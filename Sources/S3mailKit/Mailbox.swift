@@ -98,6 +98,10 @@ public final class Mailbox {
         public let subject: String
         public let from: String
         public let to: String
+        public let cc: String
+        /// Set by mailing lists and ticket systems. A reply has to obey it, or
+        /// the answer lands with whoever pressed send rather than with the list.
+        public let replyTo: String
         public let date: String
         public let text: String
         public let html: String
@@ -105,7 +109,8 @@ public final class Mailbox {
         public let attachments: [Attachment]
 
         enum CodingKeys: String, CodingKey {
-            case subject, from, to, date, text, html, spam, attachments
+            case subject, from, to, cc, date, text, html, spam, attachments
+            case replyTo = "reply_to"
         }
 
         /// Lenient for the same reason as Message: a mail with no text part has
@@ -115,6 +120,8 @@ public final class Mailbox {
             subject = try c.decodeIfPresent(String.self, forKey: .subject) ?? ""
             from = try c.decodeIfPresent(String.self, forKey: .from) ?? ""
             to = try c.decodeIfPresent(String.self, forKey: .to) ?? ""
+            cc = try c.decodeIfPresent(String.self, forKey: .cc) ?? ""
+            replyTo = try c.decodeIfPresent(String.self, forKey: .replyTo) ?? ""
             date = try c.decodeIfPresent(String.self, forKey: .date) ?? ""
             text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
             html = try c.decodeIfPresent(String.self, forKey: .html) ?? ""

@@ -81,3 +81,7 @@
 "setup.whereIsTheCode" = "The assistant on your computer shows the code under “Add device”.";
 "setup.orPaste"        = "… or paste the code here";
 "setup.next"           = "Continue";
+
+"compose.reply"    = "Reply";
+"compose.replyAll" = "Reply to all";
+"compose.forward"  = "Forward";
