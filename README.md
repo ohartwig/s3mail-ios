@@ -42,6 +42,30 @@ einer Betreffzeile — wird nicht nachgebaut.
   App an ihre kommt — ein IAM-Benutzer je Gerät, Einrichtung per QR vom Rechner —
   steht in `IOS.md` und ist nicht gebaut.
 
+## Schritt 2: das Zugangsmodell
+
+Gebaut, mit einer Einschränkung.
+
+Ein Telefon trägt **nicht** den Schlüssel des Rechners. Ein eigener IAM-Benutzer
+je Gerät, dieselbe enge Policy — dann ist ein verlorenes Telefon ein Klick in
+der IAM-Konsole und der Rechner läuft weiter. Der Assistent auf dem Rechner
+schreibt die passende Policy aus und zeigt einen QR-Code; **der Code trägt
+keinen Schlüssel**, der wird nach dem Anlegen des Benutzers von Hand eingesetzt.
+
+Hier im Repo liegt die Telefon-Seite: `Setup` liest den Code und weist zurück,
+was unvollständig ist — ein Prefix ohne Schrägstrich zum Beispiel, denn `mail`
+fängt auch `mailbox-alt/` ein, und das Postfach enthielte still fremde Post.
+`Keychain` legt das Ergebnis ab, mit `WhenUnlockedThisDeviceOnly`: nicht lesbar,
+solange das Telefon gesperrt ist, und nie auf ein zweites Gerät zurückgespielt.
+
+**Der Schlüsselbund ist unbewiesen.** Ein SwiftPM-Testbündel hat auf dem
+Simulator kein Entitlement dafür (`-34018`), und ohne Host-App gibt es keinen
+Schlüsselbund zum Reden. Die Tests überspringen deshalb — aber **nur** bei genau
+diesem Fehlercode; jeder andere Status lässt sie weiter scheitern. Ein Skip, der
+alle Schlüsselbund-Fehler schluckt, machte aus einem echten Defekt einen grünen
+Lauf, und ein Schlüsselbund, der still nichts speichert, ist das, was jemand im
+Zug bemerkt.
+
 ## Aufbau
 
     mobile/            Go: die Fassade, die Swift sieht. Eigenes Modul, weil
