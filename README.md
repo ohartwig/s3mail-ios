@@ -23,12 +23,24 @@ Damit gilt, was `IOS.md` fordert: `mimeparse` existiert genau einmal. Der harte
 Teil eines Mailclients — Outlook-Multiparts, `winmail.dat`, drei Zeichensätze in
 einer Betreffzeile — wird nicht nachgebaut.
 
+- **Es läuft auch.** Vier Tests im iOS-Simulator: Swift ruft Go, und ein
+  Betreff aus drei Zeichensätzen kommt als „Grüße aus München und Zürich" an.
+  Übersetzt ist nicht gelaufen — jetzt ist es beides.
+- **Ein echter S3-Aufruf geht durch.** `ListObjectsV2` gegen ein echtes Postfach,
+  aus dem Simulator, in 0,3 Sekunden. Das war das zweite Risiko: TLS, DNS, die
+  App-Sandbox und die Zugangsdaten-Maschinerie des SDK müssen sich zusätzlich
+  einig sein, und das beweist kein erfolgreicher Bau.
+- **Falsche Zugangsdaten kommen als Fehler an**, nicht als leere Liste. Eine App,
+  die bei fehlendem Zugriff ein leeres Postfach zeigt, schickt jemanden auf die
+  Suche nach Mail, die längst da ist.
+
 ## Was der Spike nicht beantwortet hat
 
-- **Kein Lauf auf einem Gerät.** Übersetzt ist nicht gelaufen.
-- **Kein AWS-Aufruf.** Dass das SDK übersetzt, heißt nicht, dass ein
-  `ListObjectsV2` vom Telefon aus durchgeht.
+- **Kein Lauf auf echter Hardware.** Simulator ist nicht Telefon.
 - **Keine Oberfläche.** `Sources/S3mailKit` ist die Naht, mehr nicht.
+- **Kein Zugangsmodell.** Der Test bekommt Schlüssel über die Umgebung; wie eine
+  App an ihre kommt — ein IAM-Benutzer je Gerät, Einrichtung per QR vom Rechner —
+  steht in `IOS.md` und ist nicht gebaut.
 
 ## Aufbau
 

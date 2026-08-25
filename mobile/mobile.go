@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"git.ole-hartwig.eu/development/s3mail/s3mail/awsx"
 	"git.ole-hartwig.eu/development/s3mail/s3mail/core"
 	"git.ole-hartwig.eu/development/s3mail/s3mail/mimeparse"
 )
@@ -47,3 +48,33 @@ func SearchQuery(query string) (string, error) {
 // ctx is a placeholder until the real calls arrive; gomobile cannot carry a
 // context across the bridge, so every call that needs one makes its own.
 func ctx() context.Context { return context.Background() }
+
+// ListKeys is the second question the spike has to answer: does a real AWS call
+// go through from a phone?
+//
+// That the SDK compiles for iOS says nothing about whether it can reach S3 from
+// there - TLS, DNS, the sandbox and the SDK's own credential machinery all have
+// to agree. So this makes the smallest possible call and returns what it saw.
+//
+// Credentials are passed in rather than looked up: there is no ~/.aws on a
+// phone, and the app will hand over what it keeps in the keychain. The shape of
+// that - one IAM user per device - is IOS.md's business, not this function's.
+func ListKeys(accessKey, secret, region, bucket, prefix string, limit int) (string, error) {
+	c, err := awsx.Static(ctx(), accessKey, secret, region)
+	if err != nil {
+		return "", err
+	}
+	objs, err := awsx.NewS3(c, "").List(ctx(), bucket, prefix)
+	if err != nil {
+		return "", err
+	}
+	if limit > 0 && len(objs) > limit {
+		objs = objs[:limit]
+	}
+	keys := make([]string, 0, len(objs))
+	for _, o := range objs {
+		keys = append(keys, o.Key)
+	}
+	blob, err := json.Marshal(map[string]any{"count": len(objs), "keys": keys})
+	return string(blob), err
+}
