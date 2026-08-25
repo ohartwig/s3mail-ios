@@ -33,7 +33,11 @@ variables:
   # so; die Antwort ist ein Bild mit git, nicht ein Bild mit allem.
   GIT_IMAGE: "registry.ole-hartwig.eu/devops/images/git:2.55"
   GOTOOLCHAIN: "local"
-  GOFLAGS: "-mod=mod"
+  # readonly und nicht mod: mit -mod=mod darf der Bau go.mod und go.sum
+  # stillschweigend aendern, statt an einer fehlenden Abhaengigkeit zu
+  # scheitern. Die CI reparierte dann ein Problem, statt es zu melden, und der
+  # Auscheck auf dem Rechner bliebe kaputt. Der Kern haelt es genauso.
+  GOFLAGS: "-mod=readonly"
   GOPATH: "${CI_PROJECT_DIR}/.go"
   # Der Kern liegt als Schwesterverzeichnis, weil mobile/go.mod ihn so erwartet.
   # Warum nicht als Version: seine go.mod steht unter go/, der Modulpfad zeigt
