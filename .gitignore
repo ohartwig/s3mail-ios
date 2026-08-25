@@ -1,0 +1,6 @@
+# Das XCFramework wird gebaut, nicht eingecheckt: 26 MB, und es ist nur so
+# aktuell wie der Kern, aus dem es kam. `make framework` baut es neu.
+S3mailCore.xcframework/
+.build/
+.swiftpm/
+DerivedData/
