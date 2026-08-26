@@ -20,6 +20,24 @@
 # nimmt er die Linux-Jobs des ganzen Bestands an und ist damit beschäftigt,
 # während niemand eine App baut.
 
+# Nur Zweig- und Tag-Pipelines, keine fuer Merge Requests.
+#
+# Sonst entstehen fuer denselben Commit zwei Pipelines - und die zweite ist
+# kaputt: In einer Merge-Request-Pipeline laufen nur Jobs, deren Regeln auf
+# merge_request_event passen. Das tun hier die .mac-Jobs (ihre Regel fragt nur
+# nach MAC_RUNNER), core und bridge ohne Regeln aber nicht. Damit haengt ein
+# `needs` an einem Job, den die Pipeline nicht kennt, und GitLab erzeugt eine
+# Pipeline ohne einen einzigen Job. Die gilt als gescheitert.
+#
+# Dieselbe Falle wie im Kern, nur andersherum: dort war es die Voreinstellung
+# einer Komponente, hier eine Regel, die auf zu viele Quellen passt. Beide Male
+# ist das Symptom "rote Pipeline, keine Jobs" und sagt nichts ueber den Code.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+
 stages:
   - test
   - build
