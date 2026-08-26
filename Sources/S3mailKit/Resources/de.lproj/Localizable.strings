@@ -71,3 +71,7 @@
 "compose.push_no_environment" = "Dieser Build kann keine Benachrichtigungen empfangen – ihm fehlt das Provisioning-Profil. Der Simulator kann es nie.";
 "compose.push_not_configured" = "Dieses Postfach wurde ohne Benachrichtigungen eingerichtet.";
 "compose.push_refused"        = "Das Gerät konnte nicht für Benachrichtigungen angemeldet werden.";
+
+"message.showHTML"    = "Formatierte Fassung anzeigen";
+"message.loadImages"  = "Bilder laden";
+"message.blockImages" = "Bilder blockieren";
