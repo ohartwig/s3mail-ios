@@ -136,7 +136,9 @@ public final class Mailbox {
         public let removed: Int
     }
 
-    private let inner: MobileMailbox
+    /// Readable inside the module: Push.swift talks to the same handle, and a
+    /// second wrapper around it would only be a longer way to the same call.
+    let inner: MobileMailbox
     public let setup: Setup
 
     /// Opens a mailbox from what the keychain held.

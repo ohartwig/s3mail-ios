@@ -45,6 +45,13 @@ type setupPayload struct {
 	Label     string `json:"label"`
 	AccessKey string `json:"accessKey"`
 	Secret    string `json:"secret"`
+
+	// PushApps maps Apple's environment name - "production" or "development" -
+	// to the SNS platform application for it. Both travel because the device
+	// cannot work them out, and it picks the one its own provisioning profile
+	// names.
+	PushApps  map[string]string `json:"pushApps"`
+	PushTopic string            `json:"pushTopic"`
 }
 
 // Open builds the mailbox from what the keychain held.

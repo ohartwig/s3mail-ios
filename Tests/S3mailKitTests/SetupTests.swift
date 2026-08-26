@@ -57,3 +57,97 @@ final class SetupTests: XCTestCase {
 /// The keychain, with the same attributes a device gets.
 ///
 /// These skip, and the reason is worth writing down rather than working around.
+
+/// The setup code and push.
+///
+/// The important one is the old code: setup codes get shown, photographed and
+/// pasted, and one made before push existed is still a valid way into a
+/// mailbox. A strict decoder would refuse it - and the refusal would name a
+/// field about notifications while somebody is trying to read their mail.
+final class SetupPushTests: XCTestCase {
+
+    func testACodeFromBeforePushStillWorks() throws {
+        let old = #"""
+        {"bucket":"post","prefix":"mail/ole/","region":"eu-north-1",
+         "from":"post@firma.de","label":"Post","accessKey":"","secret":""}
+        """#
+        let setup = try Setup.fromCode(old)
+        XCTAssertEqual(setup.bucket, "post")
+        XCTAssertTrue(setup.pushApps.isEmpty)
+        XCTAssertEqual(setup.pushTopic, "")
+    }
+
+    func testTheEnvironmentsSurviveTheRoundTrip() throws {
+        let code = #"""
+        {"bucket":"post","prefix":"mail/ole/","region":"eu-north-1",
+         "accessKey":"","secret":"",
+         "pushApps":{"production":"arn:prod","development":"arn:sandbox"},
+         "pushTopic":"arn:topic"}
+        """#
+        let setup = try Setup.fromCode(code)
+        // Named, not positional: two ARNs look alike, and a device that picks
+        // the wrong one gets an endpoint that receives nothing.
+        XCTAssertEqual(setup.pushApps["development"], "arn:sandbox")
+        XCTAssertEqual(setup.pushApps["production"], "arn:prod")
+        XCTAssertEqual(setup.pushTopic, "arn:topic")
+    }
+
+    /// A bucket is still required. A code without one is not an old code, it is
+    /// a wrong one.
+    func testABucketIsStillRequired() {
+        XCTAssertThrowsError(try Setup.fromCode(#"{"region":"eu-north-1"}"#))
+    }
+
+    /// The simulator has no provisioning profile, so it has no environment -
+    /// and it cannot receive a notification anyway. An honest nil beats a guess
+    /// that registers a simulator against production.
+    func testWithoutAProfileThereIsNoEnvironment() {
+        XCTAssertNil(PushEnvironment.current(bundle: .module))
+    }
+
+    /// The one piece of string handling on this path. A token turned into
+    /// something other than lowercase hex produces a device that never receives
+    /// anything and never reports an error.
+    func testATokenBecomesLowercaseHex() {
+        let token = Data([0x00, 0x0f, 0xa0, 0xff])
+        let hex = token.map { String(format: "%02x", $0) }.joined()
+        XCTAssertEqual(hex, "000fa0ff")
+        // What it must never be: Data.description used to give hex and now
+        // prints "4 bytes".
+        XCTAssertNotEqual(hex, token.description)
+    }
+}
+
+/// The split between the two readers, which is the bug this file found.
+///
+/// The assistant's code carries no key - that is its whole point. A reader that
+/// demands one refuses every real code, and the message it gives ("the code is
+/// missing an access key") sends whoever reads it looking in the wrong place.
+final class SetupCodeVsCompleteTests: XCTestCase {
+
+    private let realCode = #"""
+    {"bucket":"koh-findready-mail","prefix":"mail/ole/","region":"eu-north-1",
+     "from":"ole@findready.ai","label":"","accessKey":"","secret":"",
+     "pushApps":{},"pushTopic":""}
+    """#
+
+    func testTheAssistantsCodeIsAccepted() throws {
+        let setup = try Setup.fromCode(realCode)
+        XCTAssertEqual(setup.bucket, "koh-findready-mail")
+        XCTAssertEqual(setup.accessKey, "", "the code must not carry a key")
+    }
+
+    func testTheSameCodeIsNotACompleteSetup() {
+        // Coming out of the keychain without a key means something is broken,
+        // and there the strictness is right.
+        XCTAssertThrowsError(try Setup.decode(realCode))
+    }
+
+    /// Both readers still insist on a bucket: a code without one is not an
+    /// incomplete code, it is a wrong one.
+    func testBothInsistOnABucket() {
+        let noBucket = #"{"region":"eu-north-1","accessKey":"a","secret":"b"}"#
+        XCTAssertThrowsError(try Setup.fromCode(noBucket))
+        XCTAssertThrowsError(try Setup.decode(noBucket))
+    }
+}

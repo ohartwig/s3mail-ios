@@ -87,7 +87,7 @@ struct SetupView: View {
 
     private func read(_ code: String) {
         do {
-            scanned = try Setup.decode(code)
+            scanned = try Setup.fromCode(code)
         } catch {
             device.problem = error.localizedDescription
         }
