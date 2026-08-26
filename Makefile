@@ -5,15 +5,32 @@
 # a committed binary package is only ever as current as the day somebody built
 # it.
 #
-# Needs: Xcode with the iOS SDK, Go, and gomobile:
-#   go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init
+# Needs: Xcode with the iOS SDK and Go. gomobile is built here, not installed
+# by hand - see the tools target.
 
 CORE ?= ../S3mail/go
 
-.PHONY: framework test app app-test clean
+.PHONY: framework test app app-test tools clean
 
-framework:
-	cd mobile && PATH="$$HOME/go/bin:$$PATH" gomobile bind -target=ios -o ../S3mailCore.xcframework .
+# gomobile and gobind are built into .bin from the versions pinned in
+# mobile/go.mod - deliberately not `@latest`.
+#
+# Two reasons. A build machine somebody set up by hand once is a machine nobody
+# can rebuild: the first CI run on the Mac failed with "gomobile: command not
+# found", and the answer to that is a Makefile that brings its own tools, not a
+# runner with a special history. And `@latest` would let the CI build with a
+# different gomobile than the desk - "it must be gomobile" is the hardest kind
+# of bug hunt there is.
+BIN := $(CURDIR)/.bin
+
+$(BIN)/gomobile:
+	cd mobile && GOBIN=$(BIN) go install \
+		golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
+
+tools: $(BIN)/gomobile
+
+framework: $(BIN)/gomobile
+	cd mobile && PATH="$(BIN):$$PATH" gomobile bind -target=ios -o ../S3mailCore.xcframework .
 
 # Needs an iOS simulator runtime: xcodebuild -downloadPlatform iOS
 test: framework
@@ -32,4 +49,4 @@ app-test: framework
 		-destination '$(SIM)' | tail -20
 
 clean:
-	rm -rf S3mailCore.xcframework .build DerivedData
+	rm -rf S3mailCore.xcframework .build DerivedData $(BIN)

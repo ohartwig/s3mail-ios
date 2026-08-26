@@ -117,6 +117,13 @@ bridge:
     - if: $MAC_RUNNER == "yes"
   needs: [core]
   before_script:
+    # Was auf diesem Rechner ueberhaupt steht - drei Zeilen, die beim ersten
+    # Fehlschlag auf einem neuen Bau-Rechner die halbe Fehlersuche sparen.
+    # Beim allerersten Lauf war es "gomobile: command not found", und ohne das
+    # hier raet man, ob Go fehlt, Xcode, oder nur ein Pfad.
+    - go version || echo "kein Go auf diesem Runner"
+    - xcodebuild -version | head -2
+    - xcrun simctl list runtimes | grep -i ios || echo "keine iOS-Laufzeit - xcodebuild -downloadPlatform iOS"
     # rm zuerst: der Mac-Runner behaelt sein Arbeitsverzeichnis zwischen Laeufen,
     # und ein mv auf etwas Vorhandenes scheitert beim zweiten Mal.
     - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"
