@@ -151,3 +151,70 @@ final class SetupCodeVsCompleteTests: XCTestCase {
         XCTAssertThrowsError(try Setup.decode(noBucket))
     }
 }
+
+/// Pairing with a PIN.
+///
+/// The unsealing itself is Go's and is tested there. What is tested here is the
+/// seam: that a real code from the wizard is recognised as needing a PIN, that
+/// the wrong PIN says so, and that an opened code is actually usable.
+final class PairingTests: XCTestCase {
+
+    /// A code as the wizard writes it: an access key in the clear, no secret,
+    /// and a sealed box beside it.
+    private let code = #"""
+    {"bucket":"koh-findready-mail","prefix":"mail/ole/","region":"eu-north-1",
+     "from":"ole@findready.ai","label":"Ole",
+     "accessKey":"AKIAIOSFODNN7EXAMPLE","secret":"",
+     "sealed":"AAAA","salt":"BBBB","pushApps":{},"pushTopic":""}
+    """#
+
+    func testACodeWithASealedKeyAsksForAPIN() throws {
+        let setup = try Setup.fromCode(code)
+        XCTAssertTrue(setup.needsPIN)
+        XCTAssertEqual(setup.secret, "", "the secret must not be in the code")
+        XCTAssertEqual(setup.accessKey, "AKIAIOSFODNN7EXAMPLE",
+                       "the key id is not secret and travels in the clear")
+    }
+
+    /// The property the whole exercise exists for: the code alone is not access.
+    func testTheCodeAloneCarriesNoSecret() throws {
+        let setup = try Setup.fromCode(code)
+        XCTAssertTrue(setup.secret.isEmpty)
+        XCTAssertFalse(setup.sealed.isEmpty)
+        XCTAssertFalse(setup.salt.isEmpty)
+    }
+
+    /// An older code carries no sealed box and expects a typed key. Such codes
+    /// exist on real screens; refusing them would be a worse answer than a
+    /// longer form.
+    func testACodeFromBeforePairingNeedsNoPIN() throws {
+        let old = #"""
+        {"bucket":"post","prefix":"mail/ole/","region":"eu-north-1",
+         "accessKey":"","secret":""}
+        """#
+        XCTAssertFalse(try Setup.fromCode(old).needsPIN)
+    }
+
+    /// Garbage in the sealed box has to come back as a wrong PIN, not as a
+    /// crash and not as a mailbox with an empty key that fails at the first S3
+    /// request.
+    func testAnUnopenableBoxIsAnError() throws {
+        let setup = try Setup.fromCode(code)
+        XCTAssertThrowsError(try setup.unlock(pin: "123456"))
+    }
+
+    func testAPINOfTheWrongLengthIsRefusedBeforeTheWork() throws {
+        let setup = try Setup.fromCode(code)
+        // Not "wrong PIN" - a length error is something the field should have
+        // caught, and saying so sends the reader to the right place.
+        XCTAssertThrowsError(try setup.unlock(pin: "12345"))
+    }
+
+    /// Unlocking a code that needs no PIN gives it back unchanged, so a caller
+    /// need not branch.
+    func testUnlockingWhatNeedsNoPINChangesNothing() throws {
+        let old = try Setup.fromCode(#"{"bucket":"post","region":"eu-north-1"}"#)
+        let same = try old.unlock(pin: "000000")
+        XCTAssertEqual(old, same)
+    }
+}

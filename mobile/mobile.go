@@ -16,6 +16,7 @@ package mobile
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"git.ole-hartwig.eu/development/s3mail/s3mail/awsx"
@@ -77,4 +78,25 @@ func ListKeys(accessKey, secret, region, bucket, prefix string, limit int) (stri
 	}
 	blob, err := json.Marshal(map[string]any{"count": len(objs), "keys": keys})
 	return string(blob), err
+}
+
+// UnsealSecret opens the secret access key that a setup code carries, with the
+// PIN the desktop showed beside it.
+//
+// The unsealing lives in the Go core and not in Swift, and that is the point:
+// one implementation of PBKDF2 and AES-GCM, tested in one place. Two would
+// drift, and the day they drifted the symptom would be a code that pairs on one
+// build and not on another.
+//
+// Answers with the secret, or an error whose text is a code Swift turns into a
+// sentence - "wrong_pin" for the one a person can fix by typing again.
+func UnsealSecret(sealed, salt, pin string) (string, error) {
+	secret, err := core.OpenSecret(sealed, salt, pin)
+	if err != nil {
+		if errors.Is(err, core.ErrWrongPIN) {
+			return "", errors.New("wrong_pin")
+		}
+		return "", err
+	}
+	return secret, nil
 }

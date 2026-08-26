@@ -67,7 +67,13 @@ public struct MailboxView: View {
 
     @ViewBuilder private var list: some View {
         switch model.state {
-        case .idle, .loading where model.messages.isEmpty:
+        // The `where` twice, and that is not a typo: in a `case` with two
+        // patterns it applies only to the second. `.idle` would have matched
+        // unconditionally - harmless today, because nothing is loaded while
+        // idle, and a bug the moment somebody resets the state on a folder
+        // change: a spinner would then sit over mail already on screen.
+        case .idle where model.messages.isEmpty,
+             .loading where model.messages.isEmpty:
             ProgressView()
         case .failed(let text) where model.messages.isEmpty:
             // Only when there is nothing to show. With mail on screen the

@@ -36,6 +36,12 @@ struct PendingSendsView: ViewModifier {
     private func ask() async {
         // Off the main thread: this lists the drafts folder, and on a slow
         // connection the first screen would otherwise sit still.
+        //
+        // The mailbox is read here, on the main actor, and handed over as a
+        // value. Reaching for `self.mailbox` from inside the detached task
+        // would read a main-actor property from somewhere else - a warning
+        // today and an error under Swift 6.
+        let mailbox = self.mailbox
         open = (try? await Task.detached { try mailbox.pendingSends() }.value) ?? []
     }
 
@@ -45,7 +51,9 @@ struct PendingSendsView: ViewModifier {
         // be asked again on the next start - and it will be, because the marker
         // is still there.
         open.removeAll { $0.id == pending.id }
-        Task.detached { try? mailbox.resolve(pending: pending.id, sent: sent) }
+        let mailbox = self.mailbox
+        let key = pending.id
+        Task.detached { try? mailbox.resolve(pending: key, sent: sent) }
     }
 }
 

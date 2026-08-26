@@ -75,3 +75,9 @@
 "message.showHTML"    = "Formatierte Fassung anzeigen";
 "message.loadImages"  = "Bilder laden";
 "message.blockImages" = "Bilder blockieren";
+
+"pairing.wrong_pin"    = "Diese PIN passt nicht zu diesem Code.";
+"pairing.code_damaged" = "Dieser Code ist unvollständig. Lassen Sie am Rechner einen neuen anzeigen.";
+"setup.pin"            = "PIN";
+"setup.pinHint"        = "Die sechs Ziffern, die am Rechner neben dem Code stehen.";
+"setup.finishPairing"  = "Postfach einrichten";

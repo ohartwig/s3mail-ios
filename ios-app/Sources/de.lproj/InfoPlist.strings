@@ -1,0 +1,5 @@
+/* SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
+   SPDX-License-Identifier: Apache-2.0 */
+
+"CFBundleDisplayName" = "s3mail";
+"NSCameraUsageDescription" = "Die Kamera liest den QR-Code, mit dem dieses Gerät eingerichtet wird. Für nichts sonst.";
