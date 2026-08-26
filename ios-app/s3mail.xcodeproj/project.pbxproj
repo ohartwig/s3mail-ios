@@ -133,6 +133,14 @@
 				TargetAttributes = {
 					1A0000000000000000000004 = {
 						CreatedOnToolsVersion = 26.6;
+						DevelopmentTeam = J5R4ADAC4V;
+						ProvisioningStyle = Automatic;
+					};
+					1A0000000000000000000013 = {
+						CreatedOnToolsVersion = 26.6;
+						DevelopmentTeam = J5R4ADAC4V;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 1A0000000000000000000004;
 					};
 				};
 			};
@@ -322,6 +330,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J5R4ADAC4V;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -341,6 +350,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J5R4ADAC4V;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
