@@ -71,3 +71,7 @@
 "compose.push_no_environment" = "Esta compilación no puede recibir notificaciones: le falta el perfil de aprovisionamiento. El simulador nunca puede.";
 "compose.push_not_configured" = "Este buzón se configuró sin notificaciones.";
 "compose.push_refused"        = "No se pudo registrar el dispositivo para las notificaciones.";
+
+"message.showHTML"    = "Mostrar la versión con formato";
+"message.loadImages"  = "Cargar imágenes";
+"message.blockImages" = "Bloquear imágenes";

@@ -5,14 +5,13 @@ import SwiftUI
 
 /// One message.
 ///
-/// The HTML part is deliberately **not** rendered yet. On the desktop it goes
-/// into a sandboxed iframe with a CSP and external images blocked, and that
-/// arrangement is what makes showing a stranger's HTML defensible. A WKWebView
-/// needs the same care, and half of it is worse than none: a mail client that
+/// HTML is shown, under the same four measures the desktop uses - see
+/// HTMLBody, where each of them is named. It waited this long on purpose: half
+/// of that arrangement would be worse than none, because a mail client that
 /// loads remote images by default hands every sender a read receipt.
 ///
-/// So for now the text part, and a note when there is HTML the reader is not
-/// seeing. Honest and boring beats clever and leaky.
+/// Text is preferred when a mail carries both. It is the part the sender wrote
+/// for reading rather than for looking at, and it costs nothing to display.
 struct MessageView: View {
     let model: MailboxModel
     let message: Mailbox.Message
@@ -20,6 +19,10 @@ struct MessageView: View {
     @State private var full: Mailbox.Full?
     @State private var failure: String?
     @State private var writing: Draft?
+    /// Off for every message, and reset for every message: a decision to fetch
+    /// this sender's images is not a decision about the next one.
+    @State private var showImages = false
+    @State private var htmlHeight: CGFloat = 1
 
     var body: some View {
         ScrollView {
@@ -28,11 +31,26 @@ struct MessageView: View {
                     header(full)
                     Divider()
                     if full.text.isEmpty && !full.html.isEmpty {
-                        Label(t("message.htmlOnly"),
-                              systemImage: "doc.richtext")
-                            .font(.footnote).foregroundStyle(.secondary)
+                        HTMLBody(html: full.html, showImages: showImages) { h in
+                            htmlHeight = h
+                        }
+                        .frame(height: htmlHeight)
+                        imageToggle
                     } else {
                         Text(full.text).textSelection(.enabled)
+                        if !full.html.isEmpty {
+                            // Both parts present. The text is shown; the HTML
+                            // is one tap away for the mails where the sender
+                            // put everything in the picture.
+                            DisclosureGroup(t("message.showHTML")) {
+                                HTMLBody(html: full.html, showImages: showImages) { h in
+                                    htmlHeight = h
+                                }
+                                .frame(height: htmlHeight)
+                                imageToggle
+                            }
+                            .font(.footnote)
+                        }
                     }
                     if !full.attachments.isEmpty { attachments(full) }
                 } else if let failure {
@@ -71,10 +89,22 @@ struct MessageView: View {
             ComposeView(mailbox: model.mailbox, draft: draft)
         }
         .task(id: message.key) {
-            full = nil; failure = nil
+            full = nil; failure = nil; showImages = false; htmlHeight = 1
             do { full = try await model.read(message) }
             catch { failure = error.localizedDescription }
         }
+    }
+
+    /// Fetching remote images is the reader's decision, taken per message.
+    /// The request alone tells the sender that the address is read, when, and
+    /// roughly from where - which is what a tracking pixel is for.
+    @ViewBuilder private var imageToggle: some View {
+        Button(t(showImages ? "message.blockImages" : "message.loadImages"),
+               systemImage: showImages ? "eye.slash" : "photo") {
+            showImages.toggle()
+        }
+        .font(.footnote)
+        .buttonStyle(.bordered)
     }
 
     @ViewBuilder private func header(_ full: Mailbox.Full) -> some View {

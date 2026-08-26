@@ -90,3 +90,8 @@
 "compose.push_no_environment" = "This build cannot receive notifications - it has no provisioning profile. The simulator never can.";
 "compose.push_not_configured" = "This mailbox was set up without notifications.";
 "compose.push_refused"        = "The device could not be registered for notifications.";
+
+/* HTML mail. */
+"message.showHTML"    = "Show the formatted version";
+"message.loadImages"  = "Load images";
+"message.blockImages" = "Block images";
