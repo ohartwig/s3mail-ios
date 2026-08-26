@@ -11,7 +11,16 @@ import S3mailCore
 /// place where the JSON of the bridge stops. If a method here grows logic, it
 /// is in the wrong file - the logic belongs in the core, where the desktop gets
 /// it too.
-public final class Mailbox {
+public final class Mailbox: @unchecked Sendable {
+    // @unchecked, because Swift cannot verify the promise here - but it holds,
+    // one level down: store.Mailbox in the core keeps a sync.RWMutex and takes
+    // it in every method that touches the index. The desktop has relied on
+    // exactly that since v0.1, where several HTTP requests work on the same
+    // mailbox at once.
+    //
+    // The alternative would be to bind the mailbox to the main actor and route
+    // every S3 call through it. That would not be safer, only slower, and it
+    // would hide a truth that already holds.
 
     public struct Message: Decodable, Identifiable, Hashable {
         public let key: String

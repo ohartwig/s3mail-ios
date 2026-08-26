@@ -95,3 +95,10 @@
 "message.showHTML"    = "Show the formatted version";
 "message.loadImages"  = "Load images";
 "message.blockImages" = "Block images";
+
+/* Pairing a device with a setup code. */
+"pairing.wrong_pin"    = "That PIN does not fit this code.";
+"pairing.code_damaged" = "This code is incomplete. Have the computer show a new one.";
+"setup.pin"            = "PIN";
+"setup.pinHint"        = "The six digits shown next to the code on the computer.";
+"setup.finishPairing"  = "Set up mailbox";

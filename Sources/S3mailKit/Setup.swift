@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import Foundation
+import S3mailCore
 
 /// What a phone needs to know to be a mailbox, and how it learns it.
 ///
@@ -35,10 +36,19 @@ public struct Setup: Codable, Equatable {
     public let pushApps: [String: String]
     public let pushTopic: String
 
+    /// The secret access key, sealed with the PIN the desktop showed beside the
+    /// code. Empty for a code from before pairing worked this way.
+    ///
+    /// This is why a photograph of the screen is not the device's access: the
+    /// key travels in the code, the PIN does not.
+    public let sealed: String
+    public let salt: String
+
     public init(bucket: String, prefix: String, region: String,
                 from: String = "", label: String = "",
                 accessKey: String, secret: String,
-                pushApps: [String: String] = [:], pushTopic: String = "") {
+                pushApps: [String: String] = [:], pushTopic: String = "",
+                sealed: String = "", salt: String = "") {
         self.bucket = bucket
         self.prefix = prefix
         self.region = region
@@ -48,11 +58,13 @@ public struct Setup: Codable, Equatable {
         self.secret = secret
         self.pushApps = pushApps
         self.pushTopic = pushTopic
+        self.sealed = sealed
+        self.salt = salt
     }
 
     enum CodingKeys: String, CodingKey {
         case bucket, prefix, region, from, label, accessKey, secret
-        case pushApps, pushTopic
+        case pushApps, pushTopic, sealed, salt
     }
 
     /// Written out because a code without the push fields has to keep working.
@@ -75,12 +87,26 @@ public struct Setup: Codable, Equatable {
         secret = try c.decodeIfPresent(String.self, forKey: .secret) ?? ""
         pushApps = try c.decodeIfPresent([String: String].self, forKey: .pushApps) ?? [:]
         pushTopic = try c.decodeIfPresent(String.self, forKey: .pushTopic) ?? ""
+        sealed = try c.decodeIfPresent(String.self, forKey: .sealed) ?? ""
+        salt = try c.decodeIfPresent(String.self, forKey: .salt) ?? ""
     }
 
     /// The identity of a mailbox, the same way the desktop derives it: bucket
     /// and prefix, not the position in a list. Somebody who reorders their
     /// mailboxes must not lose their state.
     public var id: String { "\(bucket)/\(prefix)" }
+
+    /// Whether this code needs a PIN to finish. A code from the current wizard
+    /// carries a sealed key; an older one carried none and expected the key to
+    /// be typed.
+    public var needsPIN: Bool { !sealed.isEmpty && !salt.isEmpty }
+
+    /// The same mailbox with the key filled in, once the PIN has opened it.
+    public func unsealed(secret: String) -> Setup {
+        Setup(bucket: bucket, prefix: prefix, region: region, from: from,
+              label: label, accessKey: accessKey, secret: secret,
+              pushApps: pushApps, pushTopic: pushTopic)
+    }
 
     public enum Problem: LocalizedError, Equatable {
         case notJSON
@@ -111,6 +137,24 @@ public struct Setup: Codable, Equatable {
     /// which is exactly what it did until a test asked it to read one.
     public static func fromCode(_ text: String) throws -> Setup {
         try read(text, needsKey: false)
+    }
+
+    /// Reads a code and, if it carries a sealed key, opens it with the PIN.
+    ///
+    /// One call rather than two, because the two belong together: a code with a
+    /// sealed key is not usable until the PIN has been applied, and a caller
+    /// that forgot the second step would build a mailbox with no key and find
+    /// out at the first S3 request.
+    public static func fromCode(_ text: String, pin: String) throws -> Setup {
+        let scanned = try read(text, needsKey: false)
+        let opened = try scanned.unlock(pin: pin)
+        // Now it has to be complete: an opened code with no key means the PIN
+        // was right and the box was empty, which is a broken code and not a
+        // typo.
+        guard !opened.accessKey.isEmpty, !opened.secret.isEmpty else {
+            throw PairingError.damaged
+        }
+        return opened
     }
 
     /// Reads a complete setup - with the key. For a mailbox coming back out of
@@ -148,5 +192,40 @@ public struct Setup: Codable, Equatable {
     public func encode() throws -> String {
         let blob = try JSONEncoder().encode(self)
         return String(decoding: blob, as: UTF8.self)
+    }
+}
+
+public extension Setup {
+
+    /// Opens the sealed key with the PIN.
+    ///
+    /// The work happens in the Go core - one implementation of PBKDF2 and
+    /// AES-GCM, tested in one place. A second one here would drift, and the day
+    /// it drifted the symptom would be a code that pairs on one build and not
+    /// on another.
+    ///
+    /// It takes about a second, deliberately: that second is what stands
+    /// between a photograph of the code and the key inside it.
+    func unlock(pin: String) throws -> Setup {
+        guard needsPIN else { return self }
+        var err: NSError?
+        let secret = MobileUnsealSecret(sealed, salt, pin, &err)
+        if let err { throw PairingError.from(err) }
+        guard !secret.isEmpty else { throw PairingError.wrongPIN }
+        return unsealed(secret: secret)
+    }
+}
+
+public enum PairingError: String, Error, LocalizedError {
+    case wrongPIN = "wrong_pin"
+    case damaged = "code_damaged"
+
+    public var errorDescription: String? {
+        NSLocalizedString("pairing.\(rawValue)", bundle: .module,
+                          comment: "why a setup code could not be opened")
+    }
+
+    static func from(_ error: Error) -> Error {
+        PairingError(rawValue: (error as NSError).localizedDescription) ?? error
     }
 }

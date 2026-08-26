@@ -1,0 +1,14 @@
+/* SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
+   SPDX-License-Identifier: Apache-2.0
+
+   The strings iOS shows before the app has drawn anything: the name under the
+   icon, and the sentence in the permission dialog.
+
+   This file existing at all is what makes the app multilingual. iOS decides an
+   app's language from the .lproj folders in the app bundle - with none, it
+   treats the app as English-only, and then even the catalogue inside S3mailKit
+   resolves to English no matter what the phone is set to. The translations were
+   there and unreachable. */
+
+"CFBundleDisplayName" = "s3mail";
+"NSCameraUsageDescription" = "The camera reads the QR code that sets this device up. It is used for nothing else.";

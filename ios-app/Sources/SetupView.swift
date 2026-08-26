@@ -16,6 +16,8 @@ struct SetupView: View {
     @State private var scanned: Setup?
     @State private var accessKey = ""
     @State private var secret = ""
+    @State private var pin = ""
+    @State private var busy = false
     @State private var scanning = false
     @State private var pasted = ""
 
@@ -35,20 +37,38 @@ struct SetupView: View {
                     } header: {
                         Text(t("setup.mailbox"))
                     }
-                    Section {
-                        TextField(t("setup.accessKey"), text: $accessKey)
-                        SecureField(t("setup.secret"), text: $secret)
-                    } header: {
-                        Text(t("setup.deviceAccess"))
-                    } footer: {
-                        // Said here rather than in a help page nobody opens: the
-                        // wizard makes one IAM user per device, and that is what
-                        // makes losing a phone a revocation and not a migration.
-                        Text(t("setup.keysNotInCode"))
-                    }
-                    Section {
-                        Button(t("setup.finish")) { adopt() }
-                            .disabled(accessKey.isEmpty || secret.isEmpty)
+                    if scanned.needsPIN {
+                        Section {
+                            TextField(t("setup.pin"), text: $pin)
+                                .keyboardType(.numberPad)
+                                .textContentType(.oneTimeCode)
+                                .font(.system(.title2, design: .monospaced))
+                        } header: {
+                            Text(t("setup.pin"))
+                        } footer: {
+                            Text(t("setup.pinHint"))
+                        }
+                        Section {
+                            Button(t("setup.finishPairing")) { finish() }
+                                .disabled(pin.count != 6 || busy)
+                        }
+                    } else {
+                        // A code from before pairing worked this way: it carries
+                        // no key at all and somebody types one. Kept because
+                        // such codes exist on real screens, and refusing them
+                        // would be a worse answer than a longer form.
+                        Section {
+                            TextField(t("setup.accessKey"), text: $accessKey)
+                            SecureField(t("setup.secret"), text: $secret)
+                        } header: {
+                            Text(t("setup.deviceAccess"))
+                        } footer: {
+                            Text(t("setup.keysNotInCode"))
+                        }
+                        Section {
+                            Button(t("setup.finish")) { adopt() }
+                                .disabled(accessKey.isEmpty || secret.isEmpty)
+                        }
                     }
                 } else {
                     Section {
@@ -90,6 +110,29 @@ struct SetupView: View {
             scanned = try Setup.fromCode(code)
         } catch {
             device.problem = error.localizedDescription
+        }
+    }
+
+    /// Opens the sealed key with the PIN and takes the mailbox.
+    ///
+    /// Off the main thread: unsealing costs about a second by design, and that
+    /// second is what stands between a photograph of the code and the key
+    /// inside it. On the main thread it would be a second of frozen screen.
+    private func finish() {
+        guard let scanned else { return }
+        let code = scanned, typed = pin
+        busy = true
+        Task.detached {
+            do {
+                let ready = try code.unlock(pin: typed)
+                await MainActor.run { device.adopt(ready); busy = false }
+            } catch {
+                await MainActor.run {
+                    device.problem = error.localizedDescription
+                    pin = ""
+                    busy = false
+                }
+            }
         }
     }
 
