@@ -137,6 +137,21 @@ bridge:
     # scheitert mit "could not create module cache: mkdir /go: read-only file
     # system". Was hier steht, wird von GitLab aufgeloest, nicht von der Shell.
     GIT_DEPTH: "20"
+    # git clean laeuft VOR jedem Skript, also laesst sich ein Ueberbleibsel im
+    # Job nicht mehr aufraeumen - der Job stirbt vorher. Und Ueberbleibsel gibt
+    # es: Gos Modul-Cache ist schreibgeschuetzt (0444), git kommt nicht heran,
+    # und ein einziger Lauf mit GOPATH im Projektverzeichnis verkeilt den
+    # Runner dauerhaft. Genau so ist es hier zweimal passiert.
+    #
+    # -e .go nimmt das Verzeichnis vom Aufraeumen aus. Damit heilt sich der
+    # Runner selbst, statt dass jemand per Hand chmod und rm ausfuehren muss.
+    GIT_CLEAN_FLAGS: "-ffdx -e .go"
+  # Ein Rechner, ein Xcode, ein Simulator - und der Shell-Executor legt Jobs
+  # desselben Projekts ins selbe Verzeichnis. Zwei `xcodebuild test`
+  # gleichzeitig treten sich dort gegenseitig auf die Fuesse, und der Fehler
+  # sieht jedes Mal anders aus. resource_group laesst nur einen Mac-Job zur
+  # Zeit laufen.
+  resource_group: mac
   rules:
     # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
     # "stuck" steht und nichts über den Code aussagt.
