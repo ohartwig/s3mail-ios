@@ -129,6 +129,23 @@ bridge:
 # --------------------------------------------------------------------------- #
 .mac:
   tags: [mac]
+  variables:
+    # GOPATH ausserhalb des Projektverzeichnisses - anders als beim
+    # Linux-Runner oben.
+    #
+    # Gos Modul-Cache ist absichtlich schreibgeschuetzt (0444), damit niemand
+    # versehentlich eine Abhaengigkeit aendert. Der Shell-Executor behaelt sein
+    # Arbeitsverzeichnis zwischen Laeufen, und `git clean` kommt an diese
+    # Dateien nicht heran: der naechste Job stirbt dann beim Auschecken mit
+    # "Permission denied", lange vor dem ersten Skript, und das Protokoll sagt
+    # kein Wort ueber den eigentlichen Grund.
+    #
+    # Unter Docker faellt das nie auf, weil jeder Job einen frischen Container
+    # bekommt. Auf einem Rechner, den es wirklich gibt, faellt es sofort auf.
+    #
+    # Nebenbei ist es schneller: der Cache ueberlebt jetzt zwischen Laeufen,
+    # statt jedes Mal als Artefakt hin und her zu wandern.
+    GOPATH: "$HOME/go"
   rules:
     # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
     # "stuck" steht und nichts über den Code aussagt.
