@@ -20,6 +20,24 @@
 # nimmt er die Linux-Jobs des ganzen Bestands an und ist damit beschäftigt,
 # während niemand eine App baut.
 
+# Nur Zweig- und Tag-Pipelines, keine fuer Merge Requests.
+#
+# Sonst entstehen fuer denselben Commit zwei Pipelines - und die zweite ist
+# kaputt: In einer Merge-Request-Pipeline laufen nur Jobs, deren Regeln auf
+# merge_request_event passen. Das tun hier die .mac-Jobs (ihre Regel fragt nur
+# nach MAC_RUNNER), core und bridge ohne Regeln aber nicht. Damit haengt ein
+# `needs` an einem Job, den die Pipeline nicht kennt, und GitLab erzeugt eine
+# Pipeline ohne einen einzigen Job. Die gilt als gescheitert.
+#
+# Dieselbe Falle wie im Kern, nur andersherum: dort war es die Voreinstellung
+# einer Komponente, hier eine Regel, die auf zu viele Quellen passt. Beide Male
+# ist das Symptom "rote Pipeline, keine Jobs" und sagt nichts ueber den Code.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+
 stages:
   - test
   - build
@@ -111,12 +129,55 @@ bridge:
 # --------------------------------------------------------------------------- #
 .mac:
   tags: [mac]
+  variables:
+    # GOPATH steht hier bewusst NICHT, sondern wird unten mit export gesetzt.
+    #
+    # Ein `GOPATH: "$HOME/go"` an dieser Stelle laeuft erst durch GitLabs eigene
+    # Ersetzung, und GitLab kennt $HOME nicht: uebrig bleibt "/go", und der Job
+    # scheitert mit "could not create module cache: mkdir /go: read-only file
+    # system". Was hier steht, wird von GitLab aufgeloest, nicht von der Shell.
+    GIT_DEPTH: "20"
+    # git clean laeuft VOR jedem Skript, also laesst sich ein Ueberbleibsel im
+    # Job nicht mehr aufraeumen - der Job stirbt vorher. Und Ueberbleibsel gibt
+    # es: Gos Modul-Cache ist schreibgeschuetzt (0444), git kommt nicht heran,
+    # und ein einziger Lauf mit GOPATH im Projektverzeichnis verkeilt den
+    # Runner dauerhaft. Genau so ist es hier zweimal passiert.
+    #
+    # -e .go nimmt das Verzeichnis vom Aufraeumen aus. Damit heilt sich der
+    # Runner selbst, statt dass jemand per Hand chmod und rm ausfuehren muss.
+    GIT_CLEAN_FLAGS: "-ffdx -e .go"
+  # Ein Rechner, ein Xcode, ein Simulator - und der Shell-Executor legt Jobs
+  # desselben Projekts ins selbe Verzeichnis. Zwei `xcodebuild test`
+  # gleichzeitig treten sich dort gegenseitig auf die Fuesse, und der Fehler
+  # sieht jedes Mal anders aus. resource_group laesst nur einen Mac-Job zur
+  # Zeit laufen.
+  resource_group: mac
   rules:
     # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
     # "stuck" steht und nichts über den Code aussagt.
     - if: $MAC_RUNNER == "yes"
   needs: [core]
   before_script:
+    # GOPATH aus dem Projektverzeichnis heraus, und per export statt per
+    # variables: nur die Shell kennt $HOME.
+    #
+    # Warum ueberhaupt heraus: Gos Modul-Cache ist absichtlich
+    # schreibgeschuetzt (0444), damit niemand versehentlich eine Abhaengigkeit
+    # aendert. Der Shell-Executor behaelt sein Arbeitsverzeichnis zwischen
+    # Laeufen, und `git clean` kommt an diese Dateien nicht heran - der
+    # naechste Job stirbt dann beim Auschecken mit "Permission denied", lange
+    # vor dem ersten Skript. Unter Docker faellt das nie auf, weil jeder Job
+    # einen frischen Container bekommt.
+    #
+    # Nebenbei schneller: der Cache ueberlebt auf der Maschine.
+    - export GOPATH="$HOME/go"
+    # Was auf diesem Rechner ueberhaupt steht - drei Zeilen, die beim ersten
+    # Fehlschlag auf einem neuen Bau-Rechner die halbe Fehlersuche sparen.
+    # Beim allerersten Lauf war es "gomobile: command not found", und ohne das
+    # hier raet man, ob Go fehlt, Xcode, oder nur ein Pfad.
+    - go version || echo "kein Go auf diesem Runner"
+    - xcodebuild -version | head -2
+    - xcrun simctl list runtimes | grep -i ios || echo "keine iOS-Laufzeit - xcodebuild -downloadPlatform iOS"
     # rm zuerst: der Mac-Runner behaelt sein Arbeitsverzeichnis zwischen Laeufen,
     # und ein mv auf etwas Vorhandenes scheitert beim zweiten Mal.
     - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"

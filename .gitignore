@@ -9,3 +9,6 @@ DerivedData/
 # repository - without it the Mac runner finds no scheme to build.
 xcuserdata/
 *.xcuserdatad
+
+# Werkzeuge, die "make tools" baut. Gebaut, nicht eingecheckt.
+.bin/
