@@ -130,28 +130,32 @@ bridge:
 .mac:
   tags: [mac]
   variables:
-    # GOPATH ausserhalb des Projektverzeichnisses - anders als beim
-    # Linux-Runner oben.
+    # GOPATH steht hier bewusst NICHT, sondern wird unten mit export gesetzt.
     #
-    # Gos Modul-Cache ist absichtlich schreibgeschuetzt (0444), damit niemand
-    # versehentlich eine Abhaengigkeit aendert. Der Shell-Executor behaelt sein
-    # Arbeitsverzeichnis zwischen Laeufen, und `git clean` kommt an diese
-    # Dateien nicht heran: der naechste Job stirbt dann beim Auschecken mit
-    # "Permission denied", lange vor dem ersten Skript, und das Protokoll sagt
-    # kein Wort ueber den eigentlichen Grund.
-    #
-    # Unter Docker faellt das nie auf, weil jeder Job einen frischen Container
-    # bekommt. Auf einem Rechner, den es wirklich gibt, faellt es sofort auf.
-    #
-    # Nebenbei ist es schneller: der Cache ueberlebt jetzt zwischen Laeufen,
-    # statt jedes Mal als Artefakt hin und her zu wandern.
-    GOPATH: "$HOME/go"
+    # Ein `GOPATH: "$HOME/go"` an dieser Stelle laeuft erst durch GitLabs eigene
+    # Ersetzung, und GitLab kennt $HOME nicht: uebrig bleibt "/go", und der Job
+    # scheitert mit "could not create module cache: mkdir /go: read-only file
+    # system". Was hier steht, wird von GitLab aufgeloest, nicht von der Shell.
+    GIT_DEPTH: "20"
   rules:
     # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
     # "stuck" steht und nichts über den Code aussagt.
     - if: $MAC_RUNNER == "yes"
   needs: [core]
   before_script:
+    # GOPATH aus dem Projektverzeichnis heraus, und per export statt per
+    # variables: nur die Shell kennt $HOME.
+    #
+    # Warum ueberhaupt heraus: Gos Modul-Cache ist absichtlich
+    # schreibgeschuetzt (0444), damit niemand versehentlich eine Abhaengigkeit
+    # aendert. Der Shell-Executor behaelt sein Arbeitsverzeichnis zwischen
+    # Laeufen, und `git clean` kommt an diese Dateien nicht heran - der
+    # naechste Job stirbt dann beim Auschecken mit "Permission denied", lange
+    # vor dem ersten Skript. Unter Docker faellt das nie auf, weil jeder Job
+    # einen frischen Container bekommt.
+    #
+    # Nebenbei schneller: der Cache ueberlebt auf der Maschine.
+    - export GOPATH="$HOME/go"
     # Was auf diesem Rechner ueberhaupt steht - drei Zeilen, die beim ersten
     # Fehlschlag auf einem neuen Bau-Rechner die halbe Fehlersuche sparen.
     # Beim allerersten Lauf war es "gomobile: command not found", und ohne das
