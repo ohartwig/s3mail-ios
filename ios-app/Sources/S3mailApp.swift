@@ -12,6 +12,10 @@ import S3mailKit
 /// which mailbox.
 @main
 struct S3mailApp: App {
+    // UIApplicationDelegate and not the SwiftUI lifecycle alone: the device
+    // token arrives through a delegate callback, and there is no SwiftUI
+    // equivalent for it.
+    @UIApplicationDelegateAdaptor(PushDelegate.self) private var pushDelegate
     @State private var device = Device()
 
     var body: some Scene {

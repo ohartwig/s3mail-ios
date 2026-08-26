@@ -27,9 +27,18 @@ public struct Setup: Codable, Equatable {
     public let accessKey: String
     public let secret: String
 
+    /// Where this device registers for push, keyed by Apple's environment
+    /// names. Empty for a mailbox set up before push existed.
+    ///
+    /// Not secret: an ARN names a resource, it does not open it, and what the
+    /// device may do with it is decided by the IAM policy of its key.
+    public let pushApps: [String: String]
+    public let pushTopic: String
+
     public init(bucket: String, prefix: String, region: String,
                 from: String = "", label: String = "",
-                accessKey: String, secret: String) {
+                accessKey: String, secret: String,
+                pushApps: [String: String] = [:], pushTopic: String = "") {
         self.bucket = bucket
         self.prefix = prefix
         self.region = region
@@ -37,6 +46,35 @@ public struct Setup: Codable, Equatable {
         self.label = label
         self.accessKey = accessKey
         self.secret = secret
+        self.pushApps = pushApps
+        self.pushTopic = pushTopic
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case bucket, prefix, region, from, label, accessKey, secret
+        case pushApps, pushTopic
+    }
+
+    /// Written out because a code without the push fields has to keep working.
+    ///
+    /// Setup codes are shown, photographed and pasted; one made before push
+    /// existed is still a valid way into a mailbox. A synthesised decoder would
+    /// refuse it - and the refusal would name a field about notifications while
+    /// somebody is trying to read their mail.
+    ///
+    /// Bucket and region stay required: without them there is no mailbox to
+    /// open, and a code missing those is not an old code but a wrong one.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        bucket = try c.decode(String.self, forKey: .bucket)
+        region = try c.decode(String.self, forKey: .region)
+        prefix = try c.decodeIfPresent(String.self, forKey: .prefix) ?? ""
+        from = try c.decodeIfPresent(String.self, forKey: .from) ?? ""
+        label = try c.decodeIfPresent(String.self, forKey: .label) ?? ""
+        accessKey = try c.decodeIfPresent(String.self, forKey: .accessKey) ?? ""
+        secret = try c.decodeIfPresent(String.self, forKey: .secret) ?? ""
+        pushApps = try c.decodeIfPresent([String: String].self, forKey: .pushApps) ?? [:]
+        pushTopic = try c.decodeIfPresent(String.self, forKey: .pushTopic) ?? ""
     }
 
     /// The identity of a mailbox, the same way the desktop derives it: bucket
@@ -61,18 +99,40 @@ public struct Setup: Codable, Equatable {
         }
     }
 
-    /// Reads what a QR code carried.
+    /// Reads what a QR code carried - **without** the key.
     ///
-    /// Deliberately strict: a half-read code produces a mailbox that fails
+    /// The code holds no access key on purpose: that is the whole reason a
+    /// photograph of the screen, a screenshot in a chat or a shoulder in a cafe
+    /// hand nobody access. The key is typed in afterwards, and only then is the
+    /// setup complete.
+    ///
+    /// So this checks what the code can be expected to carry and nothing more.
+    /// Demanding a key here refuses every real code the assistant produces -
+    /// which is exactly what it did until a test asked it to read one.
+    public static func fromCode(_ text: String) throws -> Setup {
+        try read(text, needsKey: false)
+    }
+
+    /// Reads a complete setup - with the key. For a mailbox coming back out of
+    /// the keychain, where a missing key means something is broken.
+    ///
+    /// Deliberately strict: a half-read setup produces a mailbox that fails
     /// later, somewhere else, with an error about S3. Better to refuse here,
     /// where the cause is still visible.
     public static func decode(_ text: String) throws -> Setup {
+        try read(text, needsKey: true)
+    }
+
+    private static func read(_ text: String, needsKey: Bool) throws -> Setup {
         guard let data = text.data(using: .utf8),
               let setup = try? JSONDecoder().decode(Setup.self, from: data) else {
             throw Problem.notJSON
         }
-        for (name, value) in [("a bucket", setup.bucket), ("a region", setup.region),
-                              ("an access key", setup.accessKey), ("a secret", setup.secret)]
+        var required = [("a bucket", setup.bucket), ("a region", setup.region)]
+        if needsKey {
+            required += [("an access key", setup.accessKey), ("a secret", setup.secret)]
+        }
+        for (name, value) in required
         where value.trimmingCharacters(in: .whitespaces).isEmpty {
             throw Problem.missing(name)
         }

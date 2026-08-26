@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- "development" and not "production", also for a release build: Xcode
+	     replaces the value from the provisioning profile when exporting for
+	     distribution. Writing "production" here breaks every build onto a
+	     device, and the symptom is a token that never arrives.
+
+	     The file sits beside the project and not in Sources/: that folder is a
+	     synchronized group, and every file in it is copied into the bundle. An
+	     entitlements file shipped as a resource does nothing and tells nobody. -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>
