@@ -39,6 +39,11 @@
 "mailbox.noAccess"     = "Sin acceso";
 "mailbox.searchPrompt" = "from: subject: after: is:unread";
 "mailbox.compose"      = "Mensaje nuevo";
+"mailbox.disconnect"     = "Desconectar";
+"mailbox.disconnectAsk"  = "¿Desconectar este buzón de este teléfono?";
+"mailbox.disconnectWhy"  = "El correo del bucket queda intacto. Para volver a conectar necesitas un código de vinculación nuevo del escritorio y los seis dígitos que lo acompañan.";
+"mailbox.disconnectDo"   = "Desconectar";
+"action.cancel"          = "Cancelar";
 
 "message.htmlOnly"     = "Este correo solo tiene una parte HTML. Todavía no se muestra.";
 "message.unreadable"   = "No se puede leer";

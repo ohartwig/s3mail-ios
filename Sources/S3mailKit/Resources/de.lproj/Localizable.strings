@@ -39,6 +39,11 @@
 "mailbox.noAccess"     = "Kein Zugriff";
 "mailbox.searchPrompt" = "from: subject: after: is:unread";
 "mailbox.compose"      = "Neue Nachricht";
+"mailbox.disconnect"     = "Verbindung trennen";
+"mailbox.disconnectAsk"  = "Dieses Postfach von diesem Telefon trennen?";
+"mailbox.disconnectWhy"  = "Die Mail im Bucket bleibt unberührt. Zum Wiederverbinden brauchst du einen neuen Kopplungscode vom Schreibtisch und die sechs Ziffern dazu.";
+"mailbox.disconnectDo"   = "Trennen";
+"action.cancel"          = "Abbrechen";
 
 "message.htmlOnly"     = "Diese Mail hat nur einen HTML-Teil. Er wird noch nicht angezeigt.";
 "message.unreadable"   = "Nicht lesbar";

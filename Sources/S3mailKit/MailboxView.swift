@@ -12,16 +12,36 @@ public struct MailboxView: View {
     @State private var model: MailboxModel
     @State private var selected: Mailbox.Message?
     @State private var writing: Draft?
+    @State private var askingToDisconnect = false
+    /// The sidebar's selection, kept apart from the model's folder on purpose.
+    ///
+    /// On a phone the three columns are a stack. Coming back from the message
+    /// list leaves the folder still selected, and selecting what is already
+    /// selected is not a change - so the tap did nothing and there was no way
+    /// back into the mail. Holding the selection separately lets it be cleared
+    /// when this list is on screen again, without the model losing its folder
+    /// and reloading.
+    @State private var folderPicked: String?
+    @Environment(\.horizontalSizeClass) private var width
 
-    public init(mailbox: Mailbox) {
+    /// Handed in rather than done here, because forgetting a mailbox is the
+    /// app's business and not this view's: the keychain item and the stored
+    /// identity live one layer up.
+    ///
+    /// It exists at all because pairing is not a thing that happens once. A new
+    /// setup code on the desktop replaces this device's key - the old one stops
+    /// working the moment the dialog opens - and without a way back to the
+    /// scanner the only remedy was deleting the app.
+    private let onDisconnect: (() -> Void)?
+
+    public init(mailbox: Mailbox, onDisconnect: (() -> Void)? = nil) {
         _model = State(initialValue: MailboxModel(mailbox: mailbox))
+        self.onDisconnect = onDisconnect
     }
 
     public var body: some View {
         NavigationSplitView {
-            List(model.folders, selection: Binding(
-                get: { model.folder },
-                set: { model.folder = $0 ?? "" })) { folder in
+            List(model.folders, selection: $folderPicked) { folder in
                     Label {
                         HStack {
                             Text(folder.title)
@@ -47,6 +67,28 @@ public struct MailboxView: View {
                     .tag(folder.name)
                 }
                 .navigationTitle(model.folders.isEmpty ? "s3mail" : t("mailbox.title"))
+                .onChange(of: folderPicked) { _, picked in
+                    if let picked { model.folder = picked }
+                }
+                // Only where the columns are a stack. On a wide screen the
+                // sidebar never leaves, so clearing here would unselect the
+                // folder somebody is reading.
+                .onAppear { if width == .compact { folderPicked = nil } }
+                .toolbar {
+                    if onDisconnect != nil {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Menu {
+                                Button(t("mailbox.disconnect"),
+                                       systemImage: "iphone.slash",
+                                       role: .destructive) {
+                                    askingToDisconnect = true
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis.circle")
+                            }
+                        }
+                    }
+                }
         } content: {
             list
         } detail: {
@@ -67,6 +109,15 @@ public struct MailboxView: View {
                     }
                 }
             }
+        }
+        // Asked rather than done: it is one tap from the mail, and what it
+        // undoes needs the desktop and a six-digit PIN to redo.
+        .confirmationDialog(t("mailbox.disconnectAsk"), isPresented: $askingToDisconnect,
+                            titleVisibility: .visible) {
+            Button(t("mailbox.disconnectDo"), role: .destructive) { onDisconnect?() }
+            Button(t("action.cancel"), role: .cancel) { }
+        } message: {
+            Text(t("mailbox.disconnectWhy"))
         }
         .sheet(item: $writing) { draft in
             ComposeView(mailbox: model.mailbox, draft: draft)

@@ -55,6 +55,11 @@
 "mailbox.noAccess"     = "No access";
 "mailbox.searchPrompt" = "from: subject: after: is:unread";
 "mailbox.compose"      = "New message";
+"mailbox.disconnect"     = "Disconnect";
+"mailbox.disconnectAsk"  = "Disconnect this mailbox from this phone?";
+"mailbox.disconnectWhy"  = "The mail in the bucket is untouched. To connect again you need a fresh setup code from the desktop and the six digits beside it.";
+"mailbox.disconnectDo"   = "Disconnect";
+"action.cancel"          = "Cancel";
 
 "message.htmlOnly"     = "This mail has only an HTML part. It is not shown yet.";
 "message.unreadable"   = "Cannot be read";
