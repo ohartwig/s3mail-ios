@@ -9,7 +9,7 @@ struct RootView: View {
 
     var body: some View {
         if let mailbox = device.mailbox {
-            MailboxView(mailbox: mailbox)
+            MailboxView(mailbox: mailbox, onDisconnect: device.forget)
                 .task {
                     // After setup, not before: a permission prompt on the first
                     // screen is the one people refuse, and iOS asks only once.
