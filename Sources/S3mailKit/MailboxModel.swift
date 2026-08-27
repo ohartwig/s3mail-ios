@@ -66,6 +66,41 @@ public final class MailboxModel {
         }
     }
 
+    /// Moves a message and takes it out of the list at once.
+    ///
+    /// Optimistic on purpose: a swipe that leaves the row sitting there for a
+    /// second feels broken, and the row is coming back on the next refresh if
+    /// the move failed. What must not happen is the reverse - a row that
+    /// vanishes from a move that did not happen - so a failure puts it back.
+    public func move(_ message: Mailbox.Message, to folder: String) {
+        let before = messages
+        messages.removeAll { $0.id == message.id }
+        Task.detached { [mailbox] in
+            do {
+                _ = try mailbox.move([message.key], to: folder)
+            } catch {
+                await MainActor.run { self.messages = before }
+            }
+        }
+    }
+
+    /// Flips the star, in the list and in the bucket.
+    public func toggleStar(_ message: Mailbox.Message) {
+        let wanted = !message.star
+        Task.detached { [mailbox] in
+            try? mailbox.setStar([message.key], on: wanted)
+            await self.refresh()
+        }
+    }
+
+    /// Marks read or unread.
+    public func setRead(_ message: Mailbox.Message, _ on: Bool) {
+        Task.detached { [mailbox] in
+            try? mailbox.setRead([message.key], on: on)
+            await self.refresh()
+        }
+    }
+
     public func read(_ message: Mailbox.Message) async throws -> Mailbox.Full {
         try await Task.detached { [mailbox] in try mailbox.read(key: message.key) }.value
     }

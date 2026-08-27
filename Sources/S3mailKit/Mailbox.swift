@@ -36,6 +36,37 @@ public final class Mailbox: @unchecked Sendable {
 
         public var id: String { key }
 
+        /// The arrival time as a date.
+        ///
+        /// `date` is RFC 3339 in UTC and stays a string in the core, because
+        /// that form sorts as text and the index relies on it. A list wants
+        /// "2 hrs ago", so the conversion happens here and not there.
+        ///
+        /// Two formatters, and that is not belt and braces: in
+        /// ISO8601DateFormatter, `.withFractionalSeconds` **requires** them
+        /// rather than allowing them. One formatter with the flag rejects every
+        /// date the core writes - it uses Go's time.RFC3339, which has none -
+        /// and one without it rejects anything that does. Either way the list
+        /// would silently show no date at all.
+        ///
+        /// Static, because building a formatter per row costs more than
+        /// everything else in drawing that row put together.
+        public var when: Date? {
+            Self.plain.date(from: date) ?? Self.fractional.date(from: date)
+        }
+
+        private static let plain: ISO8601DateFormatter = {
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withInternetDateTime]
+            return f
+        }()
+
+        private static let fractional: ISO8601DateFormatter = {
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return f
+        }()
+
         enum CodingKeys: String, CodingKey {
             case key, from, subject, date, snippet, read, star, spam
             case hasAttachment = "has_attachment"
@@ -93,6 +124,28 @@ public final class Mailbox: @unchecked Sendable {
         /// feature, not an accident.
         public var title: String {
             NSLocalizedString(label, bundle: .module, comment: "a folder name")
+        }
+
+        /// The SF Symbol for this folder.
+        ///
+        /// `icon` is a name and not a glyph - "inbox", "sent" - for exactly
+        /// this: the desktop turns the same word into an SVG from its own
+        /// sprite, and here it becomes a symbol the system draws in the weight
+        /// and colour of everything around it. An emoji, which is what the core
+        /// used to carry, could do neither.
+        ///
+        /// A folder somebody made themselves is not in the list and gets the
+        /// plain folder symbol - the same fallback as its name.
+        public var symbol: String {
+            switch icon {
+            case "inbox": "tray"
+            case "drafts": "square.and.pencil"
+            case "sent": "paperplane"
+            case "archive": "archivebox"
+            case "spam": "exclamationmark.triangle"
+            case "trash": "trash"
+            default: "folder"
+            }
         }
     }
 
@@ -205,6 +258,38 @@ public final class Mailbox: @unchecked Sendable {
 
     public func read(key: String) throws -> Full {
         try decode { err in inner.read(key, error: err) }
+    }
+
+    // MARK: - Doing something to a message
+
+    /// Moves messages into a folder. The empty name is the inbox.
+    ///
+    /// Answers with how many actually moved: a bulk move survives one message
+    /// that will not go, and reporting the number asked for rather than the
+    /// number done would be the wrong kind of tidy.
+    /// gomobile turns a Go `(int, error)` into an out-parameter plus a BOOL,
+    /// not into a return value. Unwrapped here so that everything above this
+    /// line reads like Swift.
+    @discardableResult
+    public func move(_ keys: [String], to folder: String) throws -> Int {
+        var moved: Int = 0
+        try inner.move(try json(keys), folder: folder, ret0_: &moved)
+        return moved
+    }
+
+    /// Sets the star. Idempotent by construction - the op says what the flag
+    /// should be, not that it should flip - which is what lets two devices set
+    /// the same star without arguing about it.
+    public func setStar(_ keys: [String], on: Bool) throws {
+        try inner.setStar(try json(keys), on: on)
+    }
+
+    public func setRead(_ keys: [String], on: Bool) throws {
+        try inner.setRead(try json(keys), on: on)
+    }
+
+    private func json(_ keys: [String]) throws -> String {
+        String(data: try JSONEncoder().encode(keys), encoding: .utf8) ?? "[]"
     }
 
     // MARK: - Writing and sending

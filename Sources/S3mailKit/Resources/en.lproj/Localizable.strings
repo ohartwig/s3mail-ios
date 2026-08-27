@@ -92,7 +92,7 @@
 "compose.push_refused"        = "The device could not be registered for notifications.";
 
 /* HTML mail. */
-"message.showHTML"    = "Show the formatted version";
+"message.noText"      = "(no text content)";
 "message.loadImages"  = "Load images";
 "message.blockImages" = "Block images";
 
@@ -102,3 +102,10 @@
 "setup.pin"            = "PIN";
 "setup.pinHint"        = "The six digits shown next to the code on the computer.";
 "setup.finishPairing"  = "Set up mailbox";
+
+/* Swipe actions. */
+"action.trash"   = "Trash";
+"action.archive" = "Archive";
+"action.read"    = "Read";
+"action.unread"  = "Unread";
+"action.star"    = "Star";

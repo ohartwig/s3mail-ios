@@ -26,14 +26,23 @@ public struct MailboxView: View {
                         HStack {
                             Text(folder.title)
                             Spacer()
+                            // Unread as a badge and read as plain text: the
+                            // number that means "there is something for you"
+                            // should not look like the one that means "this is
+                            // how much is in here".
                             if folder.unread > 0 {
-                                Text("\(folder.unread)").monospacedDigit().bold()
+                                Text("\(folder.unread)")
+                                    .font(.caption).monospacedDigit().bold()
+                                    .padding(.horizontal, 7).padding(.vertical, 2)
+                                    .background(.tint, in: .capsule)
+                                    .foregroundStyle(.white)
+                            } else if folder.count > 0 {
+                                Text("\(folder.count)").monospacedDigit()
+                                    .font(.footnote).foregroundStyle(.secondary)
                             }
-                            Text("\(folder.count)").monospacedDigit()
-                                .foregroundStyle(.secondary)
                         }
                     } icon: {
-                        Text(folder.icon)
+                        Image(systemName: folder.symbol)
                     }
                     .tag(folder.name)
                 }
@@ -83,7 +92,42 @@ public struct MailboxView: View {
         default:
             List(model.messages, selection: $selected) { message in
                 MessageRow(message: message).tag(message)
+                    // Right to left: what one does most often, and the
+                    // destructive one furthest out, where the thumb has to
+                    // travel. That order is not decoration - it is why nobody
+                    // deletes a mail they meant to archive.
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            model.move(message, to: "trash")
+                        } label: {
+                            Label(t("action.trash"), systemImage: "trash")
+                        }
+                        Button {
+                            model.move(message, to: "archiv")
+                        } label: {
+                            Label(t("action.archive"), systemImage: "archivebox")
+                        }
+                        .tint(.indigo)
+                    }
+                    // Left to right: the two that change nothing but a flag,
+                    // and both are their own undo - swipe again and it is back.
+                    .swipeActions(edge: .leading) {
+                        Button {
+                            model.setRead(message, !message.read)
+                        } label: {
+                            Label(message.read ? t("action.unread") : t("action.read"),
+                                  systemImage: message.read ? "envelope.badge" : "envelope.open")
+                        }
+                        .tint(.blue)
+                        Button {
+                            model.toggleStar(message)
+                        } label: {
+                            Label(t("action.star"), systemImage: message.star ? "star.slash" : "star")
+                        }
+                        .tint(.yellow)
+                    }
             }
+            .listStyle(.plain)
             .searchable(text: Binding(get: { model.query },
                                       set: { model.query = $0; model.reload() }),
                         prompt: t("mailbox.searchPrompt"))
@@ -103,13 +147,32 @@ struct MessageRow: View {
     let message: Mailbox.Message
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .top, spacing: 8) {
+            // The unread dot, where every mail app on this platform puts it.
+            // A bold sender says the same thing, but only once the eye is
+            // already on that line; the dot is findable while scrolling.
+            Circle()
+                .fill(message.read ? .clear : Color.accentColor)
+                .frame(width: 8, height: 8)
+                .padding(.top, 6)
+
+            VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(message.from).fontWeight(message.read ? .regular : .semibold)
                     .lineLimit(1)
                 Spacer()
-                if message.star { Image(systemName: "star.fill").foregroundStyle(.yellow) }
-                if message.hasAttachment { Image(systemName: "paperclip") }
+                if message.star {
+                    Image(systemName: "star.fill").foregroundStyle(.yellow)
+                        .font(.footnote)
+                }
+                if message.hasAttachment {
+                    Image(systemName: "paperclip").foregroundStyle(.secondary)
+                        .font(.footnote)
+                }
+                if let when = message.when {
+                    Text(when, format: .relative(presentation: .numeric))
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
             }
             HStack(spacing: 6) {
                 Text(message.subject).lineLimit(1)
@@ -120,6 +183,7 @@ struct MessageRow: View {
             }
             Text(message.snippet).font(.footnote).foregroundStyle(.secondary)
                 .lineLimit(2)
+            }
         }
     }
 }
