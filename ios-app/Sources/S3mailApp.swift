@@ -27,16 +27,29 @@ struct S3mailApp: App {
 
 /// What this device knows about itself.
 ///
-/// The mailbox's identity - bucket and prefix - sits in UserDefaults, and the
-/// access key does not: the keychain holds that, and only that. The split is
+/// The mailboxes' identities - bucket and prefix - sit in UserDefaults, and the
+/// access keys do not: the keychain holds those, and only those. The split is
 /// deliberate. A bucket name is not a secret and putting it behind Face ID buys
 /// nothing; a secret access key in UserDefaults would be readable out of an
 /// unencrypted backup.
+///
+/// There can be several. The desktop has carried a list of accounts since it
+/// had more than one, and a phone that holds exactly one was the odd one out:
+/// somebody with a work mailbox and a private one had to decide which of them
+/// their phone was for.
 @Observable
 final class Device {
-    private static let key = "mailbox.id"
+    /// The identities, in the order they were paired.
+    private static let listKey = "mailbox.ids"
+    /// Which of them is on screen. Remembered so a launch comes back to the
+    /// mailbox somebody was last reading, not to whichever was paired first.
+    private static let currentKey = "mailbox.current"
+    /// What the single-mailbox era wrote. Read once, turned into a list of one,
+    /// then removed. It has to keep working: it is on real phones.
+    private static let legacyKey = "mailbox.id"
 
-    private(set) var setup: Setup?
+    private(set) var accounts: [Setup] = []
+    private(set) var current: Setup?
     private(set) var mailbox: Mailbox?
     var problem: String?
 
@@ -45,41 +58,100 @@ final class Device {
     var isSetUp: Bool { mailbox != nil }
 
     func reload() {
-        guard let id = UserDefaults.standard.string(forKey: Self.key) else { return }
-        do {
-            guard let setup = try Keychain.load(id: id) else {
-                // The identity is known and the key is gone: somebody restored
-                // this device from a backup, which does not carry keychain
-                // items marked as this one is. Forget the identity too, or the
-                // app shows an empty mailbox it cannot explain.
-                UserDefaults.standard.removeObject(forKey: Self.key)
-                return
+        adoptSingleMailboxLayout()
+
+        var found: [Setup] = []
+        for id in UserDefaults.standard.stringArray(forKey: Self.listKey) ?? [] {
+            do {
+                // An identity whose key is gone: somebody restored this device
+                // from a backup, which does not carry keychain items marked as
+                // these are. Dropping it beats an empty mailbox the app cannot
+                // explain - the same reasoning as before, now per mailbox.
+                if let setup = try Keychain.load(id: id) { found.append(setup) }
+            } catch {
+                problem = error.localizedDescription
             }
-            adopt(setup)
-        } catch {
-            problem = error.localizedDescription
         }
+        accounts = found
+        rememberList()
+
+        let wanted = UserDefaults.standard.string(forKey: Self.currentKey)
+        show(found.first { $0.id == wanted } ?? found.first)
     }
 
+    /// Turns what the single-mailbox era wrote into a list of one.
+    ///
+    /// Runs once and leaves nothing behind, so a downgrade is the only thing
+    /// that loses the pairing - and a downgrade would not have read the list
+    /// anyway.
+    private func adoptSingleMailboxLayout() {
+        let defaults = UserDefaults.standard
+        guard let only = defaults.string(forKey: Self.legacyKey) else { return }
+        if defaults.stringArray(forKey: Self.listKey) == nil {
+            defaults.set([only], forKey: Self.listKey)
+            defaults.set(only, forKey: Self.currentKey)
+        }
+        defaults.removeObject(forKey: Self.legacyKey)
+    }
+
+    /// Takes a freshly scanned mailbox, or replaces one that was paired again.
     func adopt(_ setup: Setup) {
         do {
             try Keychain.save(setup)
-            UserDefaults.standard.set(setup.id, forKey: Self.key)
-            self.setup = setup
-            self.mailbox = try Mailbox(setup: setup)
-            self.problem = nil
+            if accounts.contains(where: { $0.id == setup.id }) {
+                // Paired again, usually because the desktop handed out a new
+                // key. Same mailbox, so it keeps its place in the list.
+                accounts = accounts.map { $0.id == setup.id ? setup : $0 }
+            } else {
+                accounts.append(setup)
+            }
+            rememberList()
+            show(setup)
         } catch {
             problem = error.localizedDescription
         }
     }
 
-    /// Takes the mailbox off this device. The bucket is untouched - this is one
-    /// device forgetting, not a mailbox being deleted, and the difference has
-    /// to be visible in what it does.
+    /// Puts another of the paired mailboxes on screen.
+    func switchTo(id: String) {
+        guard let setup = accounts.first(where: { $0.id == id }), setup.id != current?.id else {
+            return
+        }
+        show(setup)
+    }
+
+    /// Takes the mailbox on screen off this device. The bucket is untouched -
+    /// this is one device forgetting, not a mailbox being deleted, and the
+    /// difference has to be visible in what it does.
+    ///
+    /// What is left of the list moves up. Forgetting the last one lands on the
+    /// scanner, which is where somebody with nothing paired belongs.
     func forget() {
-        if let setup { try? Keychain.forget(id: setup.id) }
-        UserDefaults.standard.removeObject(forKey: Self.key)
-        setup = nil
-        mailbox = nil
+        guard let going = current else { return }
+        try? Keychain.forget(id: going.id)
+        accounts.removeAll { $0.id == going.id }
+        rememberList()
+        show(accounts.first)
+    }
+
+    private func rememberList() {
+        UserDefaults.standard.set(accounts.map(\.id), forKey: Self.listKey)
+    }
+
+    private func show(_ setup: Setup?) {
+        current = setup
+        guard let setup else {
+            mailbox = nil
+            UserDefaults.standard.removeObject(forKey: Self.currentKey)
+            return
+        }
+        do {
+            mailbox = try Mailbox(setup: setup)
+            UserDefaults.standard.set(setup.id, forKey: Self.currentKey)
+            problem = nil
+        } catch {
+            mailbox = nil
+            problem = error.localizedDescription
+        }
     }
 }

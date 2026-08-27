@@ -39,6 +39,8 @@
 "mailbox.noAccess"     = "Sin acceso";
 "mailbox.searchPrompt" = "from: subject: after: is:unread";
 "mailbox.compose"      = "Mensaje nuevo";
+"mailbox.switchTo"       = "Buzón";
+"mailbox.addAnother"     = "Añadir otro buzón";
 "mailbox.disconnect"     = "Desconectar";
 "mailbox.disconnectAsk"  = "¿Desconectar este buzón de este teléfono?";
 "mailbox.disconnectWhy"  = "El correo del bucket queda intacto. Para volver a conectar necesitas un código de vinculación nuevo del escritorio y los seis dígitos que lo acompañan.";

@@ -21,15 +21,18 @@ final class KeychainTests: XCTestCase {
                                region: "eu-north-1", accessKey: "AKIATEST",
                                secret: "geheim")
 
-    override func setUp() {
-        super.setUp()
+    private func wipe() {
         try? Keychain.forget(id: sample.id)
+        // The identities too: a Device built by one test would otherwise find
+        // what another left behind, and the failure would land in whichever ran
+        // second.
+        for key in ["mailbox.ids", "mailbox.current", "mailbox.id"] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
 
-    override func tearDown() {
-        try? Keychain.forget(id: sample.id)
-        super.tearDown()
-    }
+    override func setUp() { super.setUp(); wipe() }
+    override func tearDown() { wipe(); super.tearDown() }
 
     func testWhatGoesInComesBack() throws {
         try Keychain.save(sample)
@@ -100,7 +103,7 @@ final class DeviceTests: XCTestCase {
         // A second Device is what the next launch builds.
         let next = Device()
         XCTAssertTrue(next.isSetUp, "the mailbox did not survive a restart")
-        XCTAssertEqual(next.setup?.bucket, sample.bucket)
+        XCTAssertEqual(next.current?.bucket, sample.bucket)
     }
 
     func testForgettingLeavesNothingBehind() throws {
