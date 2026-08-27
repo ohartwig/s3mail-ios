@@ -223,3 +223,37 @@ final class ComposeAgainstTheBucketTests: XCTestCase {
         XCTAssertEqual(try mb.pendingSends().count, 0)
     }
 }
+
+/// The date on a row.
+///
+/// Written because the first attempt was wrong in a way that shows nothing:
+/// ISO8601DateFormatter's `.withFractionalSeconds` *requires* fractional
+/// seconds rather than allowing them, and the core writes Go's time.RFC3339,
+/// which has none. One formatter with the flag would have shown no date on
+/// every message in the mailbox, and no error anywhere.
+final class MessageDateTests: XCTestCase {
+
+    private func message(date: String) throws -> Mailbox.Message {
+        let json = #"{"key":"k","date":"\#(date)"}"#
+        return try JSONDecoder().decode(Mailbox.Message.self, from: json.data(using: .utf8)!)
+    }
+
+    /// What the core actually writes.
+    func testTheFormTheCoreWritesParses() throws {
+        let m = try message(date: "2026-08-26T14:32:07Z")
+        XCTAssertNotNil(m.when, "the ordinary RFC 3339 form did not parse")
+    }
+
+    /// And what S3 sometimes hands back.
+    func testFractionalSecondsAlsoParse() throws {
+        let m = try message(date: "2026-08-26T14:32:07.123Z")
+        XCTAssertNotNil(m.when, "fractional seconds did not parse")
+    }
+
+    /// A message with no usable date must show none rather than 1970.
+    func testNonsenseIsNilAndNotTheEpoch() throws {
+        for bad in ["", "gestern", "2026-08-26"] {
+            XCTAssertNil(try message(date: bad).when, "\(bad) produced a date")
+        }
+    }
+}

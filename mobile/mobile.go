@@ -100,3 +100,13 @@ func UnsealSecret(sealed, salt, pin string) (string, error) {
 	}
 	return secret, nil
 }
+
+// stringList reads a JSON array of strings. gomobile cannot carry a []string
+// across, so lists travel as JSON - the same way everything else here does.
+func stringList(raw string) ([]string, error) {
+	var out []string
+	if err := json.Unmarshal([]byte(raw), &out); err != nil {
+		return nil, errors.New("that is not a list of keys")
+	}
+	return out, nil
+}

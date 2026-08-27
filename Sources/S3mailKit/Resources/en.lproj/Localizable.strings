@@ -102,3 +102,10 @@
 "setup.pin"            = "PIN";
 "setup.pinHint"        = "The six digits shown next to the code on the computer.";
 "setup.finishPairing"  = "Set up mailbox";
+
+/* Swipe actions. */
+"action.trash"   = "Trash";
+"action.archive" = "Archive";
+"action.read"    = "Read";
+"action.unread"  = "Unread";
+"action.star"    = "Star";

@@ -81,3 +81,9 @@
 "setup.pin"            = "PIN";
 "setup.pinHint"        = "Las seis cifras que aparecen junto al código en el ordenador.";
 "setup.finishPairing"  = "Configurar buzón";
+
+"action.trash"   = "Papelera";
+"action.archive" = "Archivar";
+"action.read"    = "Leído";
+"action.unread"  = "No leído";
+"action.star"    = "Destacar";

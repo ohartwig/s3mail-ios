@@ -81,3 +81,9 @@
 "setup.pin"            = "PIN";
 "setup.pinHint"        = "Die sechs Ziffern, die am Rechner neben dem Code stehen.";
 "setup.finishPairing"  = "Postfach einrichten";
+
+"action.trash"   = "Papierkorb";
+"action.archive" = "Archivieren";
+"action.read"    = "Gelesen";
+"action.unread"  = "Ungelesen";
+"action.star"    = "Stern";
