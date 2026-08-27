@@ -24,19 +24,17 @@ public struct MailboxView: View {
     @State private var folderPicked: String?
     @Environment(\.horizontalSizeClass) private var width
 
-    /// Handed in rather than done here, because forgetting a mailbox is the
-    /// app's business and not this view's: the keychain item and the stored
-    /// identity live one layer up.
+    /// The mailboxes this device holds. Handed in - see MailboxSwitcher.
     ///
     /// It exists at all because pairing is not a thing that happens once. A new
     /// setup code on the desktop replaces this device's key - the old one stops
     /// working the moment the dialog opens - and without a way back to the
     /// scanner the only remedy was deleting the app.
-    private let onDisconnect: (() -> Void)?
+    private let switcher: MailboxSwitcher?
 
-    public init(mailbox: Mailbox, onDisconnect: (() -> Void)? = nil) {
+    public init(mailbox: Mailbox, switcher: MailboxSwitcher? = nil) {
         _model = State(initialValue: MailboxModel(mailbox: mailbox))
-        self.onDisconnect = onDisconnect
+        self.switcher = switcher
     }
 
     public var body: some View {
@@ -75,17 +73,9 @@ public struct MailboxView: View {
                 // folder somebody is reading.
                 .onAppear { if width == .compact { folderPicked = nil } }
                 .toolbar {
-                    if onDisconnect != nil {
+                    if let switcher {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Menu {
-                                Button(t("mailbox.disconnect"),
-                                       systemImage: "iphone.slash",
-                                       role: .destructive) {
-                                    askingToDisconnect = true
-                                }
-                            } label: {
-                                Image(systemName: "ellipsis.circle")
-                            }
+                            menu(switcher)
                         }
                     }
                 }
@@ -114,7 +104,7 @@ public struct MailboxView: View {
         // undoes needs the desktop and a six-digit PIN to redo.
         .confirmationDialog(t("mailbox.disconnectAsk"), isPresented: $askingToDisconnect,
                             titleVisibility: .visible) {
-            Button(t("mailbox.disconnectDo"), role: .destructive) { onDisconnect?() }
+            Button(t("mailbox.disconnectDo"), role: .destructive) { switcher?.disconnect() }
             Button(t("action.cancel"), role: .cancel) { }
         } message: {
             Text(t("mailbox.disconnectWhy"))
@@ -123,6 +113,35 @@ public struct MailboxView: View {
             ComposeView(mailbox: model.mailbox, draft: draft)
         }
         .askingAboutUnfinishedSends(model.mailbox)
+    }
+
+    /// The menu behind the ellipsis: which mailbox, and what to do with it.
+    @ViewBuilder private func menu(_ switcher: MailboxSwitcher) -> some View {
+        Menu {
+            if switcher.showsList {
+                // A section, so "which mailbox" and "what to do with it" do not
+                // read as one list of six equal things.
+                Section(t("mailbox.switchTo")) {
+                    ForEach(switcher.entries) { entry in
+                        Button {
+                            switcher.pick(entry.id)
+                        } label: {
+                            Label(entry.title,
+                                  systemImage: entry.current ? "checkmark" : "tray")
+                        }
+                    }
+                }
+            }
+            Button(t("mailbox.addAnother"), systemImage: "plus") {
+                switcher.addAnother()
+            }
+            Button(t("mailbox.disconnect"), systemImage: "iphone.slash",
+                   role: .destructive) {
+                askingToDisconnect = true
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
     }
 
     @ViewBuilder private var list: some View {

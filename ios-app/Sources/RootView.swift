@@ -4,20 +4,52 @@
 import SwiftUI
 import S3mailKit
 
+/// Mailbox or scanner, and the way between them.
 struct RootView: View {
     @Bindable var device: Device
+    @State private var addingAnother = false
 
     var body: some View {
-        if let mailbox = device.mailbox {
-            MailboxView(mailbox: mailbox, onDisconnect: device.forget)
-                .task {
-                    // After setup, not before: a permission prompt on the first
-                    // screen is the one people refuse, and iOS asks only once.
-                    PushDelegate.mailbox = mailbox
-                    await mailbox.askForPush()
-                }
-        } else {
+        Group {
+            if let mailbox = device.mailbox {
+                MailboxView(mailbox: mailbox, switcher: switcher)
+                    // Rebuilt when the mailbox changes, and that is the point:
+                    // MailboxView keeps its model in @State, which SwiftUI
+                    // creates once per identity. Without this, switching would
+                    // change the title and keep showing the other mailbox's
+                    // mail.
+                    .id(device.current?.id)
+                    .task(id: device.current?.id) {
+                        // After setup, not before: a permission prompt on the
+                        // first screen is the one people refuse, and iOS asks
+                        // only once.
+                        PushDelegate.mailbox = mailbox
+                        PushDelegate.accounts = device.accounts
+                        await mailbox.askForPush()
+                    }
+            } else {
+                SetupView(device: device)
+            }
+        }
+        // Over the mailbox rather than in place of it: adding a second mailbox
+        // should not look like losing the first.
+        .sheet(isPresented: $addingAnother) {
             SetupView(device: device)
         }
+        // On the mailbox itself and not on how many there are: pairing the same
+        // mailbox again is the common case - it is what a fresh setup code
+        // produces - and it leaves the count where it was. Setup is Equatable,
+        // so a new key counts as a change and the scanner closes either way.
+        .onChange(of: device.current) { _, _ in addingAnother = false }
+    }
+
+    private var switcher: MailboxSwitcher {
+        MailboxSwitcher(
+            entries: device.accounts.map {
+                .init(id: $0.id, title: $0.title, current: $0.id == device.current?.id)
+            },
+            pick: { device.switchTo(id: $0) },
+            addAnother: { addingAnother = true },
+            disconnect: { device.forget() })
     }
 }

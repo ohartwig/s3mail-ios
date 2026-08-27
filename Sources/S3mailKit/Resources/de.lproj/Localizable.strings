@@ -39,6 +39,8 @@
 "mailbox.noAccess"     = "Kein Zugriff";
 "mailbox.searchPrompt" = "from: subject: after: is:unread";
 "mailbox.compose"      = "Neue Nachricht";
+"mailbox.switchTo"       = "Postfach";
+"mailbox.addAnother"     = "Weiteres Postfach hinzufügen";
 "mailbox.disconnect"     = "Verbindung trennen";
 "mailbox.disconnectAsk"  = "Dieses Postfach von diesem Telefon trennen?";
 "mailbox.disconnectWhy"  = "Die Mail im Bucket bleibt unberührt. Zum Wiederverbinden brauchst du einen neuen Kopplungscode vom Schreibtisch und die sechs Ziffern dazu.";

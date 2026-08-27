@@ -96,6 +96,19 @@ public struct Setup: Codable, Equatable {
     /// mailboxes must not lose their state.
     public var id: String { "\(bucket)/\(prefix)" }
 
+    /// What to call this mailbox on screen.
+    ///
+    /// The label if the desktop sent one, otherwise the address it sends as,
+    /// otherwise the prefix. Never the bucket on its own: several mailboxes
+    /// usually share one, and a switcher that lists the same word twice is
+    /// worse than no switcher.
+    public var title: String {
+        if !label.isEmpty { return label }
+        if !from.isEmpty { return from }
+        let trimmed = prefix.hasSuffix("/") ? String(prefix.dropLast()) : prefix
+        return trimmed.isEmpty ? bucket : trimmed
+    }
+
     /// Whether this code needs a PIN to finish. A code from the current wizard
     /// carries a sealed key; an older one carried none and expected the key to
     /// be typed.

@@ -22,23 +22,36 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
     /// setup: a permission prompt on the very first screen, before anybody has
     /// seen a single mail, is the prompt people refuse.
     static weak var mailbox: Mailbox?
+    /// Every mailbox this device holds, so the token reaches all of them and
+    /// not only the one on screen.
+    ///
+    /// One APNs token yields one SNS endpoint - CreatePlatformEndpoint answers
+    /// a token it already knows with the endpoint it already made - and each
+    /// mailbox then subscribes that one endpoint to its own topic. So this is
+    /// several subscriptions, not several endpoints, and a mailbox nobody has
+    /// opened today still wakes the phone.
+    static var accounts: [Setup] = []
     /// Called when a notification wakes the app, so the list refreshes.
     static var onWake: (() async -> Void)?
 
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken token: Data) {
-        guard let mailbox = Self.mailbox else { return }
-        // Off the main thread: this is two AWS calls, and the token arrives
-        // while the first screen is being drawn.
+        let accounts = Self.accounts
+        // Off the main thread: this is two AWS calls per mailbox, and the token
+        // arrives while the first screen is being drawn.
         Task.detached {
-            do {
-                try mailbox.registerForPush(token: token)
-            } catch {
-                // Not shown to anybody. Push is a convenience; a mailbox that
-                // works but cannot be woken is a working mailbox, and a dialog
-                // about SNS at launch helps nobody. The next launch tries
-                // again - registration is idempotent by design.
-                NSLog("s3mail: push registration failed: \(error.localizedDescription)")
+            for setup in accounts {
+                do {
+                    try Mailbox(setup: setup).registerForPush(token: token)
+                } catch {
+                    // Not shown to anybody, and one failure does not stop the
+                    // rest. Push is a convenience; a mailbox that works but
+                    // cannot be woken is a working mailbox, and a dialog about
+                    // SNS at launch helps nobody. The next launch tries again -
+                    // registration is idempotent by design.
+                    NSLog("s3mail: push registration failed for %@: %@",
+                          setup.id, error.localizedDescription)
+                }
             }
         }
     }
