@@ -92,7 +92,7 @@
 "compose.push_refused"        = "The device could not be registered for notifications.";
 
 /* HTML mail. */
-"message.showHTML"    = "Show the formatted version";
+"message.noText"      = "(no text content)";
 "message.loadImages"  = "Load images";
 "message.blockImages" = "Block images";
 

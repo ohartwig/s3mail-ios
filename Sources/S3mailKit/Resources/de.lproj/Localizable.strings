@@ -72,7 +72,7 @@
 "compose.push_not_configured" = "Dieses Postfach wurde ohne Benachrichtigungen eingerichtet.";
 "compose.push_refused"        = "Das Gerät konnte nicht für Benachrichtigungen angemeldet werden.";
 
-"message.showHTML"    = "Formatierte Fassung anzeigen";
+"message.noText"      = "(kein Textinhalt)";
 "message.loadImages"  = "Bilder laden";
 "message.blockImages" = "Bilder blockieren";
 

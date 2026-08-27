@@ -30,27 +30,18 @@ struct MessageView: View {
                 if let full {
                     header(full)
                     Divider()
-                    if full.text.isEmpty && !full.html.isEmpty {
-                        HTMLBody(html: full.html, showImages: showImages) { h in
+                    switch MessageBody.choose(text: full.text, html: full.html) {
+                    case .html(let html):
+                        HTMLBody(html: html, showImages: showImages) { h in
                             htmlHeight = h
                         }
                         .frame(height: htmlHeight)
                         imageToggle
-                    } else {
-                        Text(full.text).textSelection(.enabled)
-                        if !full.html.isEmpty {
-                            // Both parts present. The text is shown; the HTML
-                            // is one tap away for the mails where the sender
-                            // put everything in the picture.
-                            DisclosureGroup(t("message.showHTML")) {
-                                HTMLBody(html: full.html, showImages: showImages) { h in
-                                    htmlHeight = h
-                                }
-                                .frame(height: htmlHeight)
-                                imageToggle
-                            }
-                            .font(.footnote)
-                        }
+                    case .text(let text):
+                        Text(text).textSelection(.enabled)
+                    case .empty:
+                        Text(t("message.noText"))
+                            .foregroundStyle(.secondary)
                     }
                     if !full.attachments.isEmpty { attachments(full) }
                 } else if let failure {
