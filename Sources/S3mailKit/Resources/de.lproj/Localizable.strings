@@ -41,6 +41,8 @@
 "mailbox.compose"      = "Neue Nachricht";
 "mailbox.switchTo"       = "Postfach";
 "mailbox.addAnother"     = "Weiteres Postfach hinzufügen";
+"mailbox.setUpReal"      = "Eigenes Postfach einrichten";
+"mailbox.demoNotice"     = "Beispiel-Postfach – nichts hiervon ist echt.";
 "mailbox.disconnect"     = "Verbindung trennen";
 "mailbox.disconnectAsk"  = "Dieses Postfach von diesem Telefon trennen?";
 "mailbox.disconnectWhy"  = "Die Mail im Bucket bleibt unberührt. Zum Wiederverbinden brauchst du einen neuen Kopplungscode vom Schreibtisch und die sechs Ziffern dazu.";
@@ -68,6 +70,8 @@
 "setup.finish"         = "Postfach einrichten";
 "setup.scan"           = "Code scannen";
 "setup.whereIsTheCode" = "Der Assistent auf dem Rechner zeigt den Code unter „Gerät hinzufügen“.";
+"setup.tryDemo"          = "Beispiel ansehen";
+"setup.tryDemoHint"      = "Ein Postfach mit erfundener Post – ohne AWS-Konto, ohne Kopplung. Um zu sehen, worum es geht.";
 "setup.orPaste"        = "… oder den Code hier einsetzen";
 "setup.next"           = "Weiter";
 

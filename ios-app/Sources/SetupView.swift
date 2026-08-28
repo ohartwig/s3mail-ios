@@ -13,6 +13,10 @@ import S3mailKit
 /// access. The key is typed in once, here, and goes straight into the keychain.
 struct SetupView: View {
     @Bindable var device: Device
+    /// Offered when there is nothing paired yet. Absent when this view is a
+    /// sheet over an existing mailbox: somebody who already has one is not
+    /// looking for a sample.
+    var onDemo: (() -> Void)?
     @State private var scanned: Setup?
     @State private var accessKey = ""
     @State private var secret = ""
@@ -77,6 +81,15 @@ struct SetupView: View {
                         }
                     } footer: {
                         Text(t("setup.whereIsTheCode"))
+                    }
+                    if let onDemo {
+                        Section {
+                            Button(t("setup.tryDemo"), systemImage: "eye") {
+                                onDemo()
+                            }
+                        } footer: {
+                            Text(t("setup.tryDemoHint"))
+                        }
                     }
                     Section {
                         TextField(t("setup.orPaste"), text: $pasted,

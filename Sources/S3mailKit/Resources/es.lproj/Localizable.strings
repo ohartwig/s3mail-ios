@@ -41,6 +41,8 @@
 "mailbox.compose"      = "Mensaje nuevo";
 "mailbox.switchTo"       = "Buzón";
 "mailbox.addAnother"     = "Añadir otro buzón";
+"mailbox.setUpReal"      = "Configurar tu propio buzón";
+"mailbox.demoNotice"     = "Buzón de ejemplo: nada de esto es real.";
 "mailbox.disconnect"     = "Desconectar";
 "mailbox.disconnectAsk"  = "¿Desconectar este buzón de este teléfono?";
 "mailbox.disconnectWhy"  = "El correo del bucket queda intacto. Para volver a conectar necesitas un código de vinculación nuevo del escritorio y los seis dígitos que lo acompañan.";
@@ -68,6 +70,8 @@
 "setup.finish"         = "Configurar buzón";
 "setup.scan"           = "Escanear código";
 "setup.whereIsTheCode" = "El asistente del ordenador muestra el código en «Añadir dispositivo».";
+"setup.tryDemo"          = "Ver un ejemplo";
+"setup.tryDemoHint"      = "Un buzón con correo inventado: sin cuenta de AWS, sin vinculación. Para ver de qué se trata.";
 "setup.orPaste"        = "… o pegue aquí el código";
 "setup.next"           = "Continuar";
 

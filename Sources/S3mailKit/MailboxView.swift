@@ -80,7 +80,21 @@ public struct MailboxView: View {
                     }
                 }
         } content: {
-            list
+            if switcher?.demo == true {
+                VStack(spacing: 0) {
+                    // Said plainly and always on screen, not once at the start:
+                    // somebody who scrolls for a minute should not have to
+                    // remember what they tapped to get here.
+                    Label(t("mailbox.demoNotice"), systemImage: "info.circle")
+                        .font(.footnote)
+                        .padding(.horizontal).padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.yellow.opacity(0.18))
+                    list
+                }
+            } else {
+                list
+            }
         } detail: {
             if let selected {
                 MessageView(model: model, message: selected)
@@ -104,7 +118,7 @@ public struct MailboxView: View {
         // undoes needs the desktop and a six-digit PIN to redo.
         .confirmationDialog(t("mailbox.disconnectAsk"), isPresented: $askingToDisconnect,
                             titleVisibility: .visible) {
-            Button(t("mailbox.disconnectDo"), role: .destructive) { switcher?.disconnect() }
+            Button(t("mailbox.disconnectDo"), role: .destructive) { switcher?.disconnect?() }
             Button(t("action.cancel"), role: .cancel) { }
         } message: {
             Text(t("mailbox.disconnectWhy"))
@@ -132,12 +146,15 @@ public struct MailboxView: View {
                     }
                 }
             }
-            Button(t("mailbox.addAnother"), systemImage: "plus") {
+            Button(switcher.demo ? t("mailbox.setUpReal") : t("mailbox.addAnother"),
+                   systemImage: "plus") {
                 switcher.addAnother()
             }
-            Button(t("mailbox.disconnect"), systemImage: "iphone.slash",
-                   role: .destructive) {
-                askingToDisconnect = true
+            if switcher.disconnect != nil {
+                Button(t("mailbox.disconnect"), systemImage: "iphone.slash",
+                       role: .destructive) {
+                    askingToDisconnect = true
+                }
             }
         } label: {
             Image(systemName: "ellipsis.circle")

@@ -202,6 +202,12 @@ public final class Mailbox: @unchecked Sendable {
     /// second wrapper around it would only be a longer way to the same call.
     let inner: MobileMailbox
     public let setup: Setup
+    /// Whether this is the sample mailbox rather than somebody's mail.
+    ///
+    /// Read by the view to say so plainly. Nothing else branches on it: the
+    /// sample is the same client over a bucket that does not exist, and a
+    /// client full of `if isDemo` would stop being that.
+    public let isDemo: Bool
 
     /// Opens a mailbox from what the keychain held.
     ///
@@ -213,12 +219,48 @@ public final class Mailbox: @unchecked Sendable {
     /// directory travels in backups; a sandbox does not.
     public init(setup: Setup) throws {
         self.setup = setup
+        self.isDemo = false
         let dir = try Mailbox.cacheDirectory(for: setup)
         var err: NSError?
         guard let inner = MobileOpen(try setup.encode(), dir.path, &err) else {
             throw err ?? CocoaError(.fileNoSuchFile)
         }
         self.inner = inner
+    }
+
+    private init(inner: MobileMailbox, setup: Setup, isDemo: Bool) {
+        self.inner = inner
+        self.setup = setup
+        self.isDemo = isDemo
+    }
+
+    /// The sample mailbox: real mail arranged in a bucket that does not exist.
+    ///
+    /// It exists so somebody can see what this is before they own an AWS
+    /// account - and so a reviewer can use the app at all, which is a
+    /// precondition for it being in a store in the first place.
+    ///
+    /// The language decides which sample mail is shown, and an unknown one
+    /// falls back rather than yielding an empty mailbox.
+    public static func demo(language: String = Locale.current.language.languageCode?.identifier ?? "en")
+        throws -> Mailbox
+    {
+        let base = try FileManager.default.url(for: .applicationSupportDirectory,
+                                               in: .userDomainMask,
+                                               appropriateFor: nil, create: true)
+        let dir = base.appendingPathComponent("demo", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+        var err: NSError?
+        guard let inner = MobileOpenDemo(language, dir.path, &err) else {
+            throw err ?? CocoaError(.fileNoSuchFile)
+        }
+        // A Setup that never leaves this object: it is what the rest of the
+        // class reads for an identity, and it must not resemble a real one. No
+        // key, no sender - so canSend is false and there is no compose button.
+        let setup = Setup(bucket: "demo", prefix: "demo/", region: "-",
+                          accessKey: "", secret: "")
+        return Mailbox(inner: inner, setup: setup, isDemo: true)
     }
 
     /// Application Support, not Caches: the index is cheap to rebuild but the
