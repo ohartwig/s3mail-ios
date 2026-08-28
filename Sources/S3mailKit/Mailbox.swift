@@ -4,6 +4,37 @@
 import Foundation
 import S3mailCore
 
+/// RFC 3339 out of the core, a Date for the screen.
+///
+/// The core keeps dates as strings on purpose: that form sorts as text and the
+/// index relies on it. Anything that wants to *show* a date converts here.
+///
+/// Two formatters, and that is not belt and braces: in ISO8601DateFormatter,
+/// `.withFractionalSeconds` **requires** them rather than allowing them. One
+/// formatter with the flag rejects every date the core writes - it uses Go's
+/// time.RFC3339, which has none - and one without it rejects anything that
+/// does. Either way the date would silently disappear from the screen.
+///
+/// Static, because building a formatter per row costs more than everything
+/// else in drawing that row put together.
+enum RFC3339 {
+    static func parse(_ s: String) -> Date? {
+        plain.date(from: s) ?? fractional.date(from: s)
+    }
+
+    private static let plain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    private static let fractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+}
+
 /// The mailbox, as Swift holds it.
 ///
 /// Thin on purpose. Everything here forwards to the same `store.Mailbox` the
@@ -51,21 +82,7 @@ public final class Mailbox: @unchecked Sendable {
         ///
         /// Static, because building a formatter per row costs more than
         /// everything else in drawing that row put together.
-        public var when: Date? {
-            Self.plain.date(from: date) ?? Self.fractional.date(from: date)
-        }
-
-        private static let plain: ISO8601DateFormatter = {
-            let f = ISO8601DateFormatter()
-            f.formatOptions = [.withInternetDateTime]
-            return f
-        }()
-
-        private static let fractional: ISO8601DateFormatter = {
-            let f = ISO8601DateFormatter()
-            f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return f
-        }()
+        public var when: Date? { RFC3339.parse(date) }
 
         enum CodingKeys: String, CodingKey {
             case key, from, subject, date, snippet, read, star, spam
@@ -175,6 +192,11 @@ public final class Mailbox: @unchecked Sendable {
             case replyTo = "reply_to"
         }
 
+        /// The date as a Date - see RFC3339. The header shows the whole thing
+        /// rather than "5 hours ago": in a list the distance is what matters,
+        /// in an open mail the date itself is.
+        public var when: Date? { RFC3339.parse(date) }
+
         /// Lenient for the same reason as Message: a mail with no text part has
         /// no `text`, and one with no attachments may carry no list at all.
         public init(from decoder: Decoder) throws {
@@ -245,14 +267,11 @@ public final class Mailbox: @unchecked Sendable {
     public static func demo(language: String = Locale.current.language.languageCode?.identifier ?? "en")
         throws -> Mailbox
     {
-        let base = try FileManager.default.url(for: .applicationSupportDirectory,
-                                               in: .userDomainMask,
-                                               appropriateFor: nil, create: true)
-        let dir = base.appendingPathComponent("demo", isDirectory: true)
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-
+        // No directory is made and none is used: the sample writes nothing to
+        // disk. The path is passed because the bridge takes one, and ignored on
+        // the other side - see mobile/demo.go.
         var err: NSError?
-        guard let inner = MobileOpenDemo(language, dir.path, &err) else {
+        guard let inner = MobileOpenDemo(language, "", &err) else {
             throw err ?? CocoaError(.fileNoSuchFile)
         }
         // A Setup that never leaves this object: it is what the rest of the

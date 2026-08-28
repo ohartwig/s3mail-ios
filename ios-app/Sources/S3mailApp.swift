@@ -49,6 +49,14 @@ final class Device {
     private static let legacyKey = "mailbox.id"
 
     private(set) var accounts: [Setup] = []
+    /// The sample mailbox, while somebody is looking at it.
+    ///
+    /// Here and not in a view's @State, and that is not tidiness: passing a
+    /// view method as a closure hands on a *copy* of the view struct, and
+    /// reasoning about which copy a write lands in is exactly the kind of
+    /// question nobody should have to answer at four in the afternoon. Device
+    /// is observable and shared; there is one of it.
+    private(set) var sample: Mailbox?
     private(set) var current: Setup?
     private(set) var mailbox: Mailbox?
     var problem: String?
@@ -111,6 +119,22 @@ final class Device {
             problem = error.localizedDescription
         }
     }
+
+    /// Opens the sample mailbox. Nothing about it is stored - no keychain
+    /// entry, no identity, no cache - so closing it leaves no trace.
+    func showSample() {
+        do {
+            sample = try Mailbox.demo()
+        } catch {
+            // Said out loud, because the quiet version cost an afternoon: the
+            // button did nothing, the scanner stayed, and it looked exactly
+            // like a tap that had missed.
+            problem = error.localizedDescription
+        }
+    }
+
+    /// Closes it again.
+    func closeSample() { sample = nil }
 
     /// Puts another of the paired mailboxes on screen.
     func switchTo(id: String) {

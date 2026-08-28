@@ -46,6 +46,7 @@ struct HTMLBody: UIViewRepresentable {
 
         let view = WKWebView(frame: .zero, configuration: config)
         view.navigationDelegate = context.coordinator
+        context.coordinator.watch(view)
         view.isOpaque = false
         view.backgroundColor = .clear
         view.scrollView.isScrollEnabled = false // the SwiftUI scroll view scrolls
@@ -54,6 +55,13 @@ struct HTMLBody: UIViewRepresentable {
 
     func updateUIView(_ view: WKWebView, context: Context) {
         let document = Self.document(html: html, showImages: showImages)
+        // Only when it actually changed, and that guard is the whole reason
+        // anything is visible. SwiftUI calls updateUIView on every update, and
+        // reporting the measured height *is* an update - so each finished load
+        // started the next one, and the document was forever a fraction of the
+        // way in. Headers, a "load images" button, and nothing under it.
+        guard context.coordinator.loaded != document else { return }
+        context.coordinator.loaded = document
         // No base URL: with one, a relative path in the mail would resolve
         // against it and fetch. Without, it resolves against nothing.
         view.loadHTMLString(document, baseURL: nil)
@@ -82,7 +90,31 @@ struct HTMLBody: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate {
         private let onHeight: (CGFloat) -> Void
+        private var watching: NSKeyValueObservation?
+        /// The document currently in the view, so an update that changed
+        /// nothing does not restart the load. See updateUIView.
+        var loaded: String?
         init(onHeight: @escaping (CGFloat) -> Void) { self.onHeight = onHeight }
+
+        /// Watches how tall the document turned out.
+        ///
+        /// Through the scroll view and not through JavaScript, and that is the
+        /// whole point: this page runs with `allowsContentJavaScript = false`,
+        /// so `evaluateJavaScript("document.documentElement.scrollHeight")`
+        /// never runs and never answers. The height then stayed at its initial
+        /// 1 point and the mail was invisible — headers, a "load images"
+        /// button, and nothing under it.
+        ///
+        /// It cost an evening to find because everything else was right: the
+        /// HTML arrived, the view existed, the policy was correct. Only the one
+        /// number that decides whether any of it can be seen was never read.
+        func watch(_ view: WKWebView) {
+            watching = view.scrollView.observe(\.contentSize, options: [.new]) {
+                [weak self] scroll, _ in
+                let height = scroll.contentSize.height
+                if height > 1 { self?.onHeight(height) }
+            }
+        }
 
         /// Only the document this view loaded itself may load. Everything else
         /// is a link, and a link belongs in the browser.
@@ -107,9 +139,10 @@ struct HTMLBody: UIViewRepresentable {
         }
 
         func webView(_ view: WKWebView, didFinish navigation: WKNavigation!) {
-            view.evaluateJavaScript("document.documentElement.scrollHeight") { value, _ in
-                if let height = value as? CGFloat { self.onHeight(height) }
-            }
+            // The observation usually has it by now; this catches a document
+            // whose size was final before anybody was watching.
+            let height = view.scrollView.contentSize.height
+            if height > 1 { onHeight(height) }
         }
     }
 }

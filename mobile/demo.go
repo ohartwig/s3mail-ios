@@ -22,6 +22,7 @@ import (
 // What it shares with the real thing is everything below the bucket:
 // store.Mailbox, the index, the folders, the state log, mimeparse. See the demo
 // package for why that matters more than it sounds.
+// cacheDir is accepted and deliberately ignored - see below.
 func OpenDemo(language, cacheDir string) (*Mailbox, error) {
 	objects, err := demo.Objects(language, time.Now())
 	if err != nil {
@@ -34,7 +35,12 @@ func OpenDemo(language, cacheDir string) (*Mailbox, error) {
 
 	// allowDelete is false, as it is for a paired phone: what disappears here
 	// should be recoverable, and the trash is a folder.
-	inner := store.NewMailbox(ctx(), fake, nil, "demo", demo.Root, cacheDir, nil, false)
+	// No cache directory, and that is not thrift: an empty one makes
+	// store.NewMailbox write nothing at all. A sample that leaves an index
+	// behind carries it into the next run, and a stale one is a way for the
+	// sample to fail to open - which it did, silently, on a simulator that had
+	// run it before.
+	inner := store.NewMailbox(ctx(), fake, nil, "demo", demo.Root, "", nil, false)
 	if _, err := inner.Refresh(ctx()); err != nil {
 		return nil, err
 	}

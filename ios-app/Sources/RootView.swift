@@ -8,10 +8,6 @@ import S3mailKit
 struct RootView: View {
     @Bindable var device: Device
     @State private var addingAnother = false
-    /// Held here and not in Device: the sample is not something this device
-    /// owns. Nothing about it reaches the keychain, and closing it leaves no
-    /// trace.
-    @State private var sample: Mailbox?
 
     var body: some View {
         Group {
@@ -31,14 +27,14 @@ struct RootView: View {
                         PushDelegate.accounts = device.accounts
                         await mailbox.askForPush()
                     }
-            } else if let sample {
+            } else if let sample = device.sample {
                 // No push, no keychain, no pairing. A sample that asked for
                 // notification permission would be asking on behalf of mail
                 // that does not exist.
                 MailboxView(mailbox: sample, switcher: sampleSwitcher)
                     .id("sample")
             } else {
-                SetupView(device: device, onDemo: openSample)
+                SetupView(device: device, onDemo: device.showSample)
             }
         }
         // Over the mailbox rather than in place of it: adding a second mailbox
@@ -51,13 +47,6 @@ struct RootView: View {
         // produces - and it leaves the count where it was. Setup is Equatable,
         // so a new key counts as a change and the scanner closes either way.
         .onChange(of: device.current) { _, _ in addingAnother = false }
-    }
-
-    private func openSample() {
-        // A sample that fails to open is worth no dialog: the button simply
-        // does nothing and the scanner stays, which is where somebody without a
-        // mailbox belongs anyway.
-        sample = try? Mailbox.demo()
     }
 
     private var switcher: MailboxSwitcher {
@@ -74,7 +63,7 @@ struct RootView: View {
     /// mailbox. No list - there is one - and nothing to disconnect from.
     private var sampleSwitcher: MailboxSwitcher {
         MailboxSwitcher(entries: [], pick: { _ in },
-                        addAnother: { sample = nil },
+                        addAnother: { device.closeSample() },
                         demo: true)
     }
 }
