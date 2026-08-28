@@ -149,3 +149,34 @@ final class SampleOpensInTheAppTests: XCTestCase {
                       "the German sample is not the German one")
     }
 }
+
+/// The sample lives on Device, so opening it is a state change that can be
+/// tested without a simulator walking through the app.
+///
+/// That matters more than it looks: the same step used to be a view method
+/// passed on as a closure, and when it stopped working there was nothing to
+/// ask. The button did nothing, the screen did not move, and no test could
+/// tell whether the tap or the state was at fault.
+final class ShowSampleTests: XCTestCase {
+
+    func testShowingTheSampleGivesAMailbox() {
+        let device = Device()
+        XCTAssertNil(device.sample)
+
+        device.showSample()
+
+        XCTAssertNotNil(device.sample, "opening the sample did nothing: \(device.problem ?? "no error either")")
+        XCTAssertNil(device.problem)
+        XCTAssertTrue(device.sample?.isDemo == true)
+    }
+
+    func testClosingItLeavesNothing() {
+        let device = Device()
+        device.showSample()
+        device.closeSample()
+
+        XCTAssertNil(device.sample)
+        XCTAssertNil(UserDefaults.standard.string(forKey: "mailbox.current"),
+                     "the sample left an identity behind - it owns none")
+    }
+}

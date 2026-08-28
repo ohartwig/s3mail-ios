@@ -36,20 +36,57 @@ final class Screenshots: XCTestCase {
         let sample = app.buttons["Beispiel ansehen"]
         XCTAssertTrue(sample.waitForExistence(timeout: 60),
                       "the way into the sample is gone - a reviewer cannot use the app")
+        // The picture first, from the top of the screen - after the swipes
+        // below this shows a half-scrolled form, which is not what belongs on
+        // a product page.
         shot("01-einrichten")
+
+        // Existing is not the same as reachable. The button sits in the
+        // fourth section of a Form, and on a short screen that is below the
+        // fold: XCUITest reports it as existing, a tap is accepted, and
+        // nothing happens - the coordinate is outside the window. Scroll it
+        // into view first, and say so when that fails.
+        var swipes = 0
+        while !sample.isHittable && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(sample.isHittable,
+                      "\"Beispiel ansehen\" never came into view after \(swipes) swipes")
+
         sample.tap()
+
+        // Whether the tap did anything at all, said here rather than three
+        // screens later as "no folder list". A step that did not happen and a
+        // step that happened wrongly deserve different messages.
+        XCTAssertTrue(sample.waitForNonExistence(timeout: 10),
+                      "the tap on \"Beispiel ansehen\" left the setup screen up")
 
         // 2 — folders, with the unread counts that make a mailbox look alive.
         guard let inbox = waitForLabel("Posteingang") else {
             shot("02-fehlgeschlagen")
+            // What is actually on screen, in words. A screenshot shows that
+            // nothing happened; this says what the app thinks is there.
+            let tree = XCTAttachment(string: app.debugDescription)
+            tree.name = "02-baum"
+            tree.lifetime = .keepAlways
+            add(tree)
             return XCTFail("no folder list")
         }
         shot("02-ordner")
-        inbox.tap()
+        // press() and not tap(): the sidebar of a NavigationSplitView drives
+        // its selection, and a synthesized tap is short enough that SwiftUI
+        // sometimes does not count it. By hand nobody notices; here the folder
+        // list simply stayed put for twenty-seven seconds.
+        inbox.press(forDuration: 0.15)
 
         // 3 — the message list.
         guard let newsletter = waitForLabel("Ofen lohnt") else {
             shot("03-fehlgeschlagen")
+            let tree = XCTAttachment(string: app.debugDescription)
+            tree.name = "03-baum"
+            tree.lifetime = .keepAlways
+            add(tree)
             return XCTFail("no message list")
         }
         shot("03-liste")
