@@ -4,10 +4,14 @@
 import SwiftUI
 import S3mailKit
 
-/// Mailbox or scanner, and the way between them.
+/// Mailbox, sample or scanner, and the ways between them.
 struct RootView: View {
     @Bindable var device: Device
     @State private var addingAnother = false
+    /// Held here and not in Device: the sample is not something this device
+    /// owns. Nothing about it reaches the keychain, and closing it leaves no
+    /// trace.
+    @State private var sample: Mailbox?
 
     var body: some View {
         Group {
@@ -27,8 +31,14 @@ struct RootView: View {
                         PushDelegate.accounts = device.accounts
                         await mailbox.askForPush()
                     }
+            } else if let sample {
+                // No push, no keychain, no pairing. A sample that asked for
+                // notification permission would be asking on behalf of mail
+                // that does not exist.
+                MailboxView(mailbox: sample, switcher: sampleSwitcher)
+                    .id("sample")
             } else {
-                SetupView(device: device)
+                SetupView(device: device, onDemo: openSample)
             }
         }
         // Over the mailbox rather than in place of it: adding a second mailbox
@@ -43,6 +53,13 @@ struct RootView: View {
         .onChange(of: device.current) { _, _ in addingAnother = false }
     }
 
+    private func openSample() {
+        // A sample that fails to open is worth no dialog: the button simply
+        // does nothing and the scanner stays, which is where somebody without a
+        // mailbox belongs anyway.
+        sample = try? Mailbox.demo()
+    }
+
     private var switcher: MailboxSwitcher {
         MailboxSwitcher(
             entries: device.accounts.map {
@@ -51,5 +68,13 @@ struct RootView: View {
             pick: { device.switchTo(id: $0) },
             addAnother: { addingAnother = true },
             disconnect: { device.forget() })
+    }
+
+    /// What the sample offers: one way out, and it leads to setting up a real
+    /// mailbox. No list - there is one - and nothing to disconnect from.
+    private var sampleSwitcher: MailboxSwitcher {
+        MailboxSwitcher(entries: [], pick: { _ in },
+                        addAnother: { sample = nil },
+                        demo: true)
     }
 }

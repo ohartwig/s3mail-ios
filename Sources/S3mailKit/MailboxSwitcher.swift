@@ -29,16 +29,26 @@ public struct MailboxSwitcher {
     public let entries: [Entry]
     public let pick: (String) -> Void
     public let addAnother: () -> Void
-    public let disconnect: () -> Void
+    /// Absent where there is nothing to disconnect - the sample mailbox is not
+    /// paired with anything, and offering to unpair it would be a lie.
+    public let disconnect: (() -> Void)?
+    /// Whether what is on screen is the sample rather than somebody's mail.
+    ///
+    /// It changes what the menu offers and puts a line above the list. Kept
+    /// here rather than read from the mailbox so the view has one thing to
+    /// consult instead of two.
+    public let demo: Bool
 
     public init(entries: [Entry],
                 pick: @escaping (String) -> Void,
                 addAnother: @escaping () -> Void,
-                disconnect: @escaping () -> Void) {
+                disconnect: (() -> Void)? = nil,
+                demo: Bool = false) {
         self.entries = entries
         self.pick = pick
         self.addAnother = addAnother
         self.disconnect = disconnect
+        self.demo = demo
     }
 
     /// Whether the list of mailboxes is worth showing at all.

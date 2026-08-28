@@ -57,6 +57,8 @@
 "mailbox.compose"      = "New message";
 "mailbox.switchTo"       = "Mailbox";
 "mailbox.addAnother"     = "Add another mailbox";
+"mailbox.setUpReal"      = "Set up your own mailbox";
+"mailbox.demoNotice"     = "Sample mailbox – none of this is real.";
 "mailbox.disconnect"     = "Disconnect";
 "mailbox.disconnectAsk"  = "Disconnect this mailbox from this phone?";
 "mailbox.disconnectWhy"  = "The mail in the bucket is untouched. To connect again you need a fresh setup code from the desktop and the six digits beside it.";
@@ -86,6 +88,8 @@
 "setup.finish"         = "Set up mailbox";
 "setup.scan"           = "Scan code";
 "setup.whereIsTheCode" = "The assistant on your computer shows the code under “Add device”.";
+"setup.tryDemo"          = "Look at a sample";
+"setup.tryDemoHint"      = "A mailbox of made-up mail – no AWS account, no pairing. To see what this is.";
 "setup.orPaste"        = "… or paste the code here";
 "setup.next"           = "Continue";
 
