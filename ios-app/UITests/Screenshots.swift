@@ -135,6 +135,10 @@ final class Screenshots: XCTestCase {
 
     /// One screenshot, kept whatever the test does afterwards.
     private func shot(_ name: String) {
+        // Let the push animation finish. Without this the picture catches a
+        // half-drawn navigation bar - a back button faded in a third of the
+        // way - which nobody wants on a product page.
+        Thread.sleep(forTimeInterval: 0.6)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways

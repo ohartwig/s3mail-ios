@@ -104,7 +104,16 @@ struct MessageView: View {
             Text(full.from).font(.subheadline)
             Text(full.to).font(.footnote).foregroundStyle(.secondary)
             HStack(spacing: 6) {
-                Text(full.date).font(.footnote).foregroundStyle(.secondary)
+                // The parsed date when it parses, the raw header when it does
+                // not. A mail with a broken Date: line should lose the nice
+                // formatting, not the line.
+                if let when = full.when {
+                    Text(when, format: .dateTime.day().month(.wide).year()
+                        .hour().minute())
+                        .font(.footnote).foregroundStyle(.secondary)
+                } else if !full.date.isEmpty {
+                    Text(full.date).font(.footnote).foregroundStyle(.secondary)
+                }
                 if full.spam { Tag(text: t("message.spam"), bad: true) }
                 if message.authFailed { Tag(text: t("message.authFailed"), bad: true) }
             }
