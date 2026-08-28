@@ -54,10 +54,15 @@ struct RootView: View {
     }
 
     private func openSample() {
-        // A sample that fails to open is worth no dialog: the button simply
-        // does nothing and the scanner stays, which is where somebody without a
-        // mailbox belongs anyway.
-        sample = try? Mailbox.demo()
+        do {
+            sample = try Mailbox.demo()
+        } catch {
+            // Said out loud, because the quiet version cost an afternoon: the
+            // button did nothing, the scanner stayed, and it looked exactly
+            // like a tap that had missed. A sample that cannot open is a fault
+            // worth naming, not one to swallow.
+            device.problem = error.localizedDescription
+        }
     }
 
     private var switcher: MailboxSwitcher {

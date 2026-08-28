@@ -12,3 +12,6 @@ xcuserdata/
 
 # Werkzeuge, die "make tools" baut. Gebaut, nicht eingecheckt.
 .bin/
+
+# Ergebnis-Buendel der Screenshot-Laeufe - siehe "make shots".
+*.xcresult/

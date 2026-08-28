@@ -125,3 +125,27 @@ final class AccountsTests: XCTestCase {
                        "the identity without a key stayed in the list and is read again next launch")
     }
 }
+
+/// The sample has to open inside the app, not only in the package tests.
+///
+/// It is the same call, and it still earns its own test: the app target builds
+/// against the framework the app ships, with the app's bundle and the device's
+/// language. A screenshot run once failed here and looked like a tap that had
+/// missed - the button did nothing, and nothing said why.
+final class SampleOpensInTheAppTests: XCTestCase {
+
+    func testTheSampleOpensWithTheDeviceLanguage() throws {
+        let mailbox = try Mailbox.demo()
+        XCTAssertTrue(mailbox.isDemo)
+        XCTAssertFalse(try mailbox.search("", folder: "").isEmpty,
+                       "the sample opened but has no mail in it")
+    }
+
+    /// And with an explicit language, the way the walk-through runs it.
+    func testTheSampleOpensInGerman() throws {
+        let mailbox = try Mailbox.demo(language: "de")
+        let inbox = try mailbox.search("", folder: "")
+        XCTAssertTrue(inbox.contains { $0.subject.contains("Beispiel-Postfach") },
+                      "the German sample is not the German one")
+    }
+}

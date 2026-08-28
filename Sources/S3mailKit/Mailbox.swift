@@ -245,14 +245,11 @@ public final class Mailbox: @unchecked Sendable {
     public static func demo(language: String = Locale.current.language.languageCode?.identifier ?? "en")
         throws -> Mailbox
     {
-        let base = try FileManager.default.url(for: .applicationSupportDirectory,
-                                               in: .userDomainMask,
-                                               appropriateFor: nil, create: true)
-        let dir = base.appendingPathComponent("demo", isDirectory: true)
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-
+        // No directory is made and none is used: the sample writes nothing to
+        // disk. The path is passed because the bridge takes one, and ignored on
+        // the other side - see mobile/demo.go.
         var err: NSError?
-        guard let inner = MobileOpenDemo(language, dir.path, &err) else {
+        guard let inner = MobileOpenDemo(language, "", &err) else {
             throw err ?? CocoaError(.fileNoSuchFile)
         }
         // A Setup that never leaves this object: it is what the rest of the
