@@ -94,7 +94,7 @@ include:
   # more.
   #
   # renovate: datasource=gitlab-tags depName=devops/ci-cd-components/release-tools
-  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/semantic-release@1.17.54
+  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/semantic-release@1.17.56
     inputs:
       stage: release
       config-preset: '@moselwal/semantic-release-config'
