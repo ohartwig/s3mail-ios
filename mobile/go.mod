@@ -7,7 +7,7 @@
 // aufloesbaren Modulpfad hat.
 module git.ole-hartwig.eu/development/s3mail/ios/mobile
 
-go 1.26.0
+go 1.27.0
 
 // Der Kern liegt als Schwesterverzeichnis, nicht als Version.
 //
