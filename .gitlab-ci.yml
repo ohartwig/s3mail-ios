@@ -36,18 +36,30 @@
 # described above cannot happen.
 #
 # What the old block really prevented was the duplicate pipeline for one commit,
-# and for that it was the blunt instrument. The second rule below does it
-# without giving up merge-request pipelines: while a merge request is open its
-# pipeline runs and the branch pipeline does not. On the Mac that is more than a
-# cost question -- the .mac jobs share a resource_group, so two pipelines on the
-# same commit queue behind each other.
+# and that problem is real -- on the Mac more than elsewhere, because the .mac
+# jobs share a resource_group and two pipelines on one commit queue behind each
+# other.
+#
+# The obvious guard is `$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS -> never`,
+# and it does not hold. It was tried here first and the review caught it: at the
+# moment of a push no merge request is open yet, so the variable is empty, the
+# branch pipeline runs, and creating the merge request adds a second one on the
+# same commit. Measured on this branch -- pipelines 159586 (push) and 159590
+# (merge_request_event), same commit, both on the Mac.
+#
+# So: the rule set the composed templates use, with the trade said out loud.
+# Pushing to a branch with no merge request open runs NOTHING;
+# `git push -o merge_request.create` does both in one step. One commit, one
+# pipeline.
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH
+    # A triggered pipeline is a deliberate invocation, not a by-product of a
+    # push.
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - when: never
 
 # The automated merge-request review, as in the core repository. Dispatch only:
 # this job holds no credential, it fires a downstream pipeline in
