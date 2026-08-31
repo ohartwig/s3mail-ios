@@ -20,23 +20,60 @@
 # nimmt er die Linux-Jobs des ganzen Bestands an und ist damit beschäftigt,
 # während niemand eine App baut.
 
-# Nur Zweig- und Tag-Pipelines, keine fuer Merge Requests.
+# Merge-request pipelines, and with them any automated review at all: ai:review
+# runs on merge_request_event and on nothing else.
 #
-# Sonst entstehen fuer denselben Commit zwei Pipelines - und die zweite ist
-# kaputt: In einer Merge-Request-Pipeline laufen nur Jobs, deren Regeln auf
-# merge_request_event passen. Das tun hier die .mac-Jobs (ihre Regel fragt nur
-# nach MAC_RUNNER), core und bridge ohne Regeln aber nicht. Damit haengt ein
-# `needs` an einem Job, den die Pipeline nicht kennt, und GitLab erzeugt eine
-# Pipeline ohne einen einzigen Job. Die gilt als gescheitert.
+# The opposite stood here, with a reason that does not hold. It said a
+# merge-request pipeline runs only jobs whose rules match merge_request_event --
+# the .mac jobs, whose rule asks about MAC_RUNNER -- but not core and bridge,
+# which carry no rules; a `needs` would then point at a job the pipeline does
+# not contain, and GitLab would create a pipeline with no jobs at all.
 #
-# Dieselbe Falle wie im Kern, nur andersherum: dort war es die Voreinstellung
-# einer Komponente, hier eine Regel, die auf zu viele Quellen passt. Beide Male
-# ist das Symptom "rote Pipeline, keine Jobs" und sagt nichts ueber den Code.
+# Measured in the core repository on 2026-08-31: there only manifest, upload and
+# release carry rules, while test, .build, the four build:* and sign:macos carry
+# none. Pipeline 159144 (source = merge_request_event) ran exactly those
+# rule-less jobs, all six green. Rule-less jobs do take part, so the breakage
+# described above cannot happen.
+#
+# What the old block really prevented was the duplicate pipeline for one commit,
+# and that problem is real -- on the Mac more than elsewhere, because the .mac
+# jobs share a resource_group and two pipelines on one commit queue behind each
+# other.
+#
+# The obvious guard is `$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS -> never`,
+# and it does not hold. It was tried here first and the review caught it: at the
+# moment of a push no merge request is open yet, so the variable is empty, the
+# branch pipeline runs, and creating the merge request adds a second one on the
+# same commit. Measured on this branch -- pipelines 159586 (push) and 159590
+# (merge_request_event), same commit, both on the Mac.
+#
+# So: the rule set the composed templates use, with the trade said out loud.
+# Pushing to a branch with no merge request open runs NOTHING;
+# `git push -o merge_request.create` does both in one step. One commit, one
+# pipeline.
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
-    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+    - if: $CI_COMMIT_TAG
+    # A triggered pipeline is a deliberate invocation, not a by-product of a
+    # push.
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - when: never
+
+# The automated merge-request review, as in the core repository. Dispatch only:
+# this job holds no credential, it fires a downstream pipeline in
+# devops/ai-code-review whose protected default branch assumes the AWS role.
+#
+# No `stage`, so the component's default `.post` applies. A named stage would be
+# judged against the stages list below and would stop the pipeline from being
+# created at all, rather than merely skipping the job.
+#
+# renovate: datasource=gitlab-tags depName=devops/ci-cd-components/ai-tools/ai-review
+include:
+  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/ai-tools/ai-review@1.2.6
+    inputs:
+      enabled: 'true'
 
 stages:
   - test
