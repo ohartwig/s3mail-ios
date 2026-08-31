@@ -102,6 +102,12 @@ include:
       config-preset-scope: moselwal
       tag-format: 'v${version}'
       rules-config:
+        # A pipeline started by hand forces a release run. This is the
+        # component's own first rule, and dropping it was an accident when the
+        # list below was narrowed: `web` and `push` are mutually exclusive, so
+        # keeping it costs the restriction nothing. Without it there is no way
+        # to ask for a release except by committing.
+        - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_PIPELINE_SOURCE == 'web'
         # Loop guard: semantic-release commits CHANGELOG.md back to main, and
         # that commit must not start another release.
         - if: $CI_COMMIT_REF_PROTECTED == "true"
