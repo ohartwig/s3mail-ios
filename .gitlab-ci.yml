@@ -116,6 +116,15 @@ include:
           when: never
         - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_TAG == null && $CI_PIPELINE_SOURCE == "push"
         - when: never
+  # Shadow of the successor: decides as yasrt would, before this pipeline
+  # releases anything, and compares afterwards. Observes only (allow_failure,
+  # no writes, .pre/.post). Migration to release-tools/yasrt is planned for
+  # 2026-09-14; the verdicts collected until then are the evidence.
+  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/yasrt-shadow@1
+    inputs:
+      product: custom
+      tag-format: "'v${version}'"
+      non-release-paths: ['.gitlab-ci.yml', '.pre-commit-config.yaml']
 
 stages:
   - test
