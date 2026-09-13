@@ -81,55 +81,31 @@ include:
   # and it cost it 25 unreleased commits; here it cost the ability to name a
   # state.
   #
-  # `v${version}` to match the core, although nothing here matches on the tag -
-  # two repositories in one family should not disagree about what a version
-  # looks like.
+  # release-tools/yasrt: `version` decides in .pre, `release` tags in the
+  # release stage after the builds, with the job token -- the release commit
+  # starts no pipeline, so no loop guard on CHANGELOG.md is needed. The tag
+  # format and the non-release paths live in .yasrt.yaml; `v${version}` to
+  # match the core, although nothing here matches on the tag.
   #
-  # The rules are the component's own, with one addition: only on a real push.
-  # Since the core triggers this repository on every change of its main branch
-  # (s3mail!63), those pipelines are protected, carry no tag, and would
-  # otherwise satisfy the default rule. semantic-release would find nothing to
-  # release and do nothing - but running the job to decide that on every core
-  # change is noise, and noise in a release path is how nobody looks at it any
-  # more.
-  #
-  # renovate: datasource=gitlab-tags depName=devops/ci-cd-components/release-tools
-  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/semantic-release@1.17.56
+  # The rules are the component's own, with one addition: only on a real push
+  # (or a pipeline started by hand). Since the core triggers this repository on
+  # every change of its main branch (s3mail!63), those pipelines are protected,
+  # carry no tag, and would otherwise satisfy the default rule.
+  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/yasrt@1
     inputs:
-      stage: release
-      config-preset: '@moselwal/semantic-release-config'
-      config-preset-group-id: "175"
-      config-preset-scope: moselwal
+      stage-version: .pre
+      stage-release: release
+      product: custom
       tag-format: 'v${version}'
       rules-config:
-        # A pipeline started by hand forces a release run. This is the
-        # component's own first rule, and dropping it was an accident when the
-        # list below was narrowed: `web` and `push` are mutually exclusive, so
-        # keeping it costs the restriction nothing. Without it there is no way
-        # to ask for a release except by committing.
         - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_PIPELINE_SOURCE == 'web'
-        # Loop guard: semantic-release commits CHANGELOG.md back to main, and
-        # that commit must not start another release.
-        - if: $CI_COMMIT_REF_PROTECTED == "true"
-          changes:
-            - CHANGELOG.md
-          when: never
         - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_TAG == null && $CI_PIPELINE_SOURCE == "push"
         - when: never
-  # Shadow of the successor: decides as yasrt would, before this pipeline
-  # releases anything, and compares afterwards. Observes only (allow_failure,
-  # no writes, .pre/.post). Migration to release-tools/yasrt is planned for
-  # 2026-09-14; the verdicts collected until then are the evidence.
-  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/yasrt-shadow@1
-    inputs:
-      product: custom
-      tag-format: "'v${version}'"
-      non-release-paths: ['.gitlab-ci.yml', '.pre-commit-config.yaml']
 
 stages:
   - test
   - build
-  # `release` exists for semantic-release and nothing else. Nothing in this
+  # `release` exists for yasrt and nothing else. Nothing in this
   # repository ships an artefact - package and app run tests - so what a release
   # buys here is the version history and the changelog, not a download.
   - release
