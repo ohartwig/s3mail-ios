@@ -91,7 +91,7 @@ include:
   # (or a pipeline started by hand). Since the core triggers this repository on
   # every change of its main branch (s3mail!63), those pipelines are protected,
   # carry no tag, and would otherwise satisfy the default rule.
-  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/yasrt@1
+  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/yasrt@2
     inputs:
       stage-version: .pre
       stage-release: release
