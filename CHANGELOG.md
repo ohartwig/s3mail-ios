@@ -1,3 +1,13 @@
+## [1.1.0](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.0.1...v1.1.0) (2026-09-14)
+
+### :sparkles: Features
+
+* **mobile:** den Kern als Modul mit Version einbinden, nicht per replace ([44532c0](https://git.ole-hartwig.eu/development/s3mail/ios/commit/44532c0e3675e78172e25525b91457d650fd0359))
+
+### :bug: Fixes
+
+* **ci:** den Extraheader als Block schreiben - ein Doppelpunkt im Wert macht die Zeile zur YAML-Zuordnung ([3b56c16](https://git.ole-hartwig.eu/development/s3mail/ios/commit/3b56c16bd70a5f2e9a3da4c66d925d0dda85f3e6))
+
 ## [1.0.1](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.0.0...v1.0.1) (2026-09-14)
 
 ### :repeat: Continuous Integrations
