@@ -146,7 +146,9 @@ variables:
   before_script:
     - umask 077 && printf 'machine %s login gitlab-ci-token password %s\n' "${CI_SERVER_HOST}" "${CI_JOB_TOKEN}" > "${CI_PROJECT_DIR}/.netrc"
     - export NETRC="${CI_PROJECT_DIR}/.netrc"
-    - export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.${CI_SERVER_URL}/.extraheader" GIT_CONFIG_VALUE_0="Authorization: Basic $(printf 'gitlab-ci-token:%s' "${CI_JOB_TOKEN}" | base64 | tr -d '\n')"
+    - |
+      export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.${CI_SERVER_URL}/.extraheader"
+      export GIT_CONFIG_VALUE_0="Authorization: Basic $(printf 'gitlab-ci-token:%s' "${CI_JOB_TOKEN}" | base64 | tr -d '\n')"
 
 # --------------------------------------------------------------------------- #
 # Die Brücke, ohne Mac
