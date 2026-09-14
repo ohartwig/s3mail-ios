@@ -6,9 +6,9 @@ package mobile
 import (
 	"time"
 
-	"git.ole-hartwig.eu/development/s3mail/s3mail/demo"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/s3fake"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/store"
+	"git.ole-hartwig.eu/development/s3mail/s3mail/go/demo"
+	"git.ole-hartwig.eu/development/s3mail/s3mail/go/s3fake"
+	"git.ole-hartwig.eu/development/s3mail/s3mail/go/store"
 )
 
 // OpenDemo builds the sample mailbox: the same client over a bucket that does

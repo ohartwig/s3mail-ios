@@ -186,17 +186,24 @@ Für iOS baut die CI **nicht** auf Linux: `GOOS=ios` verlangt CGO und damit eine
 clang-Toolchain mit iOS-SDK. Der Linux-Job baut deshalb für Linux — was er
 prüft, ist die Brücke, nicht das Ziel.
 
-## Der Kern als Schwesterverzeichnis
+## Der Kern als Modul mit Version
 
-`mobile/go.mod` zeigt über ein `replace` auf einen Auscheck von
-`development/s3mail/s3mail` **neben** diesem Repo:
+`mobile/go.mod` verlangt `git.ole-hartwig.eu/development/s3mail/s3mail/go` in
+einer festen Version — das `/go` am Ende, weil die `go.mod` des Kerns unter
+`go/` steht und Go ein Untermodul nach seinem Verzeichnis benennt. Die
+Versionen heißen dort `go/v1.5.0`, neben `v1.5.0`.
 
-    projekte/
-      s3mail/       <- der Kern
-      s3mail-ios/   <- dieses Repo
+Der Kern ist nicht öffentlich. Lokal braucht Go darum zweierlei:
 
-Nicht als Version, obwohl der Kern getaggt ist: sein Modulpfad zeigt auf das
-Wurzelverzeichnis des Repos, die `go.mod` steht aber unter `go/` — ein `go get`
-auf den Tag fände dort nichts. Der Pfad ist relativ und nicht absolut, sonst
-baut dieses Repo nur auf dem einen Rechner, auf dem es jemand einmal
-eingerichtet hat.
+    export GOPRIVATE=git.ole-hartwig.eu
+    # ~/.netrc, Rechte 0600:
+    machine git.ole-hartwig.eu login <benutzer> password <token mit read_repository>
+
+Ohne Anmeldung antwortet GitLab auf Gos Modulanfrage nicht mit einem Fehler,
+sondern mit der Gruppe als Modul — und `go` klont dann etwas, das kein
+Repository ist. Die Pipeline meldet sich mit dem Job-Token an.
+
+Eine neue Kern-Version kommt wie jede andere Abhängigkeit: als Merge Request
+von pinup, mit `go mod tidy` im Gepäck. Wer lokal gegen einen ungetaggten
+Stand des Kerns arbeiten will, nimmt dafür eine `go.work` — nicht ein
+`replace` in `mobile/go.mod`, das würde jeden mitnehmen.

@@ -25,8 +25,8 @@
 #
 # The opposite stood here, with a reason that does not hold. It said a
 # merge-request pipeline runs only jobs whose rules match merge_request_event --
-# the .mac jobs, whose rule asks about MAC_RUNNER -- but not core and bridge,
-# which carry no rules; a `needs` would then point at a job the pipeline does
+# the .mac jobs, whose rule asks about MAC_RUNNER -- but not bridge,
+# which carries no rules; a `needs` would then point at a job the pipeline does
 # not contain, and GitLab would create a pipeline with no jobs at all.
 #
 # Measured in the core repository on 2026-08-31: there only manifest, upload and
@@ -117,10 +117,6 @@ variables:
   # Dasselbe goldene Bild wie im Kern. Zwei Go-Versionen für dasselbe Programm
   # wären zwei Möglichkeiten, unterschiedliche Ergebnisse zu bekommen.
   GO_IMAGE: "registry.ole-hartwig.eu/devops/images/golang:1.27"
-  # Ein eigener Job holt den Kern, weil das Go-Bild kein git hat - es ist ein
-  # minimales Wolfi-Bild und traegt genau das, was Go braucht. Das ist richtig
-  # so; die Antwort ist ein Bild mit git, nicht ein Bild mit allem.
-  GIT_IMAGE: "registry.ole-hartwig.eu/devops/images/git:2.55"
   GOTOOLCHAIN: "local"
   # readonly und nicht mod: mit -mod=mod darf der Bau go.mod und go.sum
   # stillschweigend aendern, statt an einer fehlenden Abhaengigkeit zu
@@ -128,39 +124,29 @@ variables:
   # Auscheck auf dem Rechner bliebe kaputt. Der Kern haelt es genauso.
   GOFLAGS: "-mod=readonly"
   GOPATH: "${CI_PROJECT_DIR}/.go"
-  # Der Kern liegt als Schwesterverzeichnis, weil mobile/go.mod ihn so erwartet.
-  # Warum nicht als Version: seine go.mod steht unter go/, der Modulpfad zeigt
-  # aber auf das Wurzelverzeichnis - ein `go get` auf den Tag findet dort nichts.
-  # Steht ausführlich in mobile/go.mod.
-  # Mit dem Job-Token, nicht ohne: der Kern ist nicht oeffentlich, und ein
-  # `git clone` ohne Anmeldung fragt nach einem Benutzernamen, den niemand
-  # eintippt ("could not read Username" - genau so gescheitert).
-  #
-  # Dafuer muss dieses Projekt in der Job-Token-Allowlist des Kerns stehen.
-  # Sonst kommt statt der Frage nach dem Benutzernamen ein 403, was dasselbe
-  # Ergebnis mit einer anderen Meldung ist.
-  CORE_REPO: "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/development/s3mail/s3mail.git"
-  CORE_REF: "main"
+  # Der Kern kommt als Modul mit Version, wie jede andere Abhaengigkeit -
+  # mobile/go.mod sagt welche. Er ist nicht oeffentlich, also holt Go ihn
+  # direkt von git.ole-hartwig.eu statt ueber den Proxy und prueft ihn nicht
+  # gegen die Summendatenbank (GOPRIVATE deckt beides ab). Angemeldet wird
+  # mit dem Job-Token, siehe .go-private; dafuer muss dieses Projekt in der
+  # Job-Token-Allowlist des Kerns stehen (seit 2026-08-31), sonst kommt ein
+  # 403, das wie ein fehlendes Projekt aussieht.
+  GOPRIVATE: "git.ole-hartwig.eu"
 
 # --------------------------------------------------------------------------- #
-# Der Kern
+# Anmeldung fuer den Kern
 # --------------------------------------------------------------------------- #
-# Als eigener Job und nicht als before_script, weil das Go-Bild kein git
-# mitbringt. Das Ergebnis geht als Artefakt weiter - unter core/, denn ein
-# Artefakt kann nur aus dem Projektverzeichnis kommen. Die Jobs, die ihn
-# brauchen, schieben ihn danach an die Stelle, an der mobile/go.mod ihn erwartet.
-core:
-  stage: test
-  image: ${GIT_IMAGE}
-  variables:
-    GIT_STRATEGY: none # das eigene Repo braucht dieser Job gar nicht
-  script:
-    - git clone --depth 1 --branch "${CORE_REF}" "${CORE_REPO}" core
-    - git -C core rev-parse --short HEAD
-  artifacts:
-    paths:
-      - core/go
-    expire_in: 1 day
+# Zwei Wege zum selben Token, weil zwei Programme fragen: Go selbst fuer die
+# go-import-Auskunft (liest NETRC), und git, das Go zum Klonen aufruft (liest
+# seine Konfiguration, hier per Umgebung statt per Datei, denn auf dem Mac ist
+# das Home des Runners nicht das Home dieses Jobs). Ohne Anmeldung antwortet
+# GitLab auf die Auskunft nicht mit 401, sondern mit der Gruppe als Modul, und
+# Go klont dann etwas, das kein Repository ist (gemessen 2026-09-14).
+.go-private:
+  before_script:
+    - umask 077 && printf 'machine %s login gitlab-ci-token password %s\n' "${CI_SERVER_HOST}" "${CI_JOB_TOKEN}" > "${CI_PROJECT_DIR}/.netrc"
+    - export NETRC="${CI_PROJECT_DIR}/.netrc"
+    - export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.${CI_SERVER_URL}/.extraheader" GIT_CONFIG_VALUE_0="Authorization: Basic $(printf 'gitlab-ci-token:%s' "${CI_JOB_TOKEN}" | base64 | tr -d '\n')"
 
 # --------------------------------------------------------------------------- #
 # Die Brücke, ohne Mac
@@ -168,7 +154,7 @@ core:
 bridge:
   stage: build
   image: ${GO_IMAGE}
-  needs: [core]
+  needs: []
   cache:
     key:
       files:
@@ -176,9 +162,7 @@ bridge:
     paths:
       - .go/pkg/mod
   before_script:
-    # Neben den Auscheck, nicht hinein: mobile/go.mod erwartet den Kern als
-    # Schwesterverzeichnis, damit dasselbe replace lokal und hier gilt.
-    - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"
+    - !reference [.go-private, before_script]
     - cd mobile
   script:
     - test -z "$(gofmt -l .)" || { echo "nicht formatiert:"; gofmt -l .; exit 1; }
@@ -227,8 +211,9 @@ bridge:
     # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
     # "stuck" steht und nichts über den Code aussagt.
     - if: $MAC_RUNNER == "yes"
-  needs: [core]
+  needs: []
   before_script:
+    - !reference [.go-private, before_script]
     # GOPATH aus dem Projektverzeichnis heraus, und per export statt per
     # variables: nur die Shell kennt $HOME.
     #
@@ -249,9 +234,6 @@ bridge:
     - go version || echo "kein Go auf diesem Runner"
     - xcodebuild -version | head -2
     - xcrun simctl list runtimes | grep -i ios || echo "keine iOS-Laufzeit - xcodebuild -downloadPlatform iOS"
-    # rm zuerst: der Mac-Runner behaelt sein Arbeitsverzeichnis zwischen Laeufen,
-    # und ein mv auf etwas Vorhandenes scheitert beim zweiten Mal.
-    - rm -rf "${CI_PROJECT_DIR}/../s3mail" && mv core "${CI_PROJECT_DIR}/../s3mail"
 
 framework:
   extends: .mac
@@ -266,7 +248,7 @@ framework:
 package:
   extends: .mac
   stage: build
-  needs: [core, framework]
+  needs: [framework]
   script:
     # Die Tests gegen ein echtes Postfach überspringen sich ohne Zugangsdaten
     # still. Das ist hier richtig: die Pipeline soll nicht in fremde Post sehen.
@@ -278,7 +260,7 @@ package:
 app:
   extends: .mac
   stage: build
-  needs: [core, framework]
+  needs: [framework]
   script:
     # Der Simulator verlangt keine Signatur, und ein Signaturschlüssel auf dem
     # Bau-Runner wäre ein Schlüssel mehr, der dort nichts zu suchen hat.

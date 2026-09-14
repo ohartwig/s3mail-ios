@@ -11,10 +11,10 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 
-	"git.ole-hartwig.eu/development/s3mail/s3mail/awsx"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/core"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/mimeparse"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/store"
+	"git.ole-hartwig.eu/development/s3mail/s3mail/go/awsx"
+	"git.ole-hartwig.eu/development/s3mail/s3mail/go/core"
+	"git.ole-hartwig.eu/development/s3mail/s3mail/go/mimeparse"
+	"git.ole-hartwig.eu/development/s3mail/s3mail/go/store"
 )
 
 // A mailbox on the phone, and it is the same mailbox.
