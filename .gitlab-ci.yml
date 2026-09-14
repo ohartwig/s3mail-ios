@@ -71,7 +71,7 @@ workflow:
 #
 # renovate: datasource=gitlab-tags depName=devops/ci-cd-components/ai-tools/ai-review
 include:
-  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/ai-tools/ai-review@1.2.25
+  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/ai-tools/ai-review@1.2.26
     inputs:
       enabled: 'true'
 
