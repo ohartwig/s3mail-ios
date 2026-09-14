@@ -1,3 +1,14 @@
+## [1.0.1](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.0.0...v1.0.1) (2026-09-14)
+
+### :repeat: Continuous Integrations
+
+* release-tools/yasrt@2 ([d262fb2](https://git.ole-hartwig.eu/development/s3mail/ios/commit/d262fb23207f34648c2ba206870935a35be09e14))
+* the release tells merge requests and issues they shipped, as before ([a91eacd](https://git.ole-hartwig.eu/development/s3mail/ios/commit/a91eacd67820c85a069bea7b3ba23a77a4036833))
+
+### :repeat: Chores
+
+* **deps:** update dependency devops/ci-cd-components/ai-tools to v1.2.25 ([12854f4](https://git.ole-hartwig.eu/development/s3mail/ios/commit/12854f4a882943b96257002ac18ed625e5717e8d))
+
 ## [1.0.0] (2026-09-13)
 
 ### :sparkles: Features
