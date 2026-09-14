@@ -6,8 +6,8 @@ package mobile
 import (
 	"errors"
 
-	"git.ole-hartwig.eu/development/s3mail/s3mail/go/awsx"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/go/core"
+	"github.com/ohartwig/s3mail/awsx"
+	"github.com/ohartwig/s3mail/core"
 )
 
 // Push registration, from the phone.

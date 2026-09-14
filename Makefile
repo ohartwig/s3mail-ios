@@ -8,8 +8,6 @@
 # Needs: Xcode with the iOS SDK and Go. gomobile is built here, not installed
 # by hand - see the tools target.
 
-CORE ?= ../S3mail/go
-
 .PHONY: framework test app app-test shots tools clean
 
 # gomobile and gobind are built into .bin from the versions pinned in

@@ -5,25 +5,29 @@
 // Standardbibliothek plus AWS-SDK und go-message. Die Abhaengigkeit gehoert
 // also hierher und nicht dorthin - moeglich erst, seit der Kern einen
 // aufloesbaren Modulpfad hat.
-module git.ole-hartwig.eu/development/s3mail/ios/mobile
+module github.com/ohartwig/s3mail-ios/mobile
 
 go 1.27.0
 
 // Der Kern kommt als Version, wie jede andere Abhaengigkeit.
 //
-// Sein Modulpfad ist git.ole-hartwig.eu/development/s3mail/s3mail/go - mit
-// dem /go, weil seine go.mod unter go/ steht und Go ein Untermodul nach seinem
-// Verzeichnis benennt. Versioniert ist es unter den Tags go/vX.Y.Z, die der
-// Kern neben vX.Y.Z setzt. Bis 2026-09-14 zeigte ein replace auf ein
-// Schwester-Checkout; damit baute dieses Repo nur in genau einer
-// Verzeichnisstruktur, und jedes `go mod tidy` ausserhalb - etwa das einer
-// Abhaengigkeitsaktualisierung - scheiterte.
+// Sein Modulpfad ist github.com/ohartwig/s3mail, seine go.mod liegt seit
+// 2026-09-14 im Wurzelverzeichnis, und vX.Y.Z ist die Version. Bis dahin
+// zeigte ein replace auf ein Schwester-Checkout; damit baute dieses Repo nur
+// in genau einer Verzeichnisstruktur, und jedes `go mod tidy` ausserhalb -
+// etwa das einer Abhaengigkeitsaktualisierung - scheiterte.
 //
-// Der Kern ist nicht oeffentlich: GOPRIVATE=git.ole-hartwig.eu und eine
-// Anmeldung in ~/.netrc, lokal wie in der Pipeline (.gitlab-ci.yml sagt wie).
+// Solange der oeffentliche Spiegel auf GitHub nicht steht, holt Go den Kern
+// von GitLab: das replace unten zeigt auf denselben Stand unter dem
+// GitLab-Pfad (das Fork-Muster - die go.mod dort traegt den GitHub-Namen).
+// Dafuer GOPRIVATE=git.ole-hartwig.eu und eine Anmeldung in ~/.netrc, lokal
+// wie in der Pipeline (.gitlab-ci.yml sagt wie). Mit dem Spiegel faellt das
+// replace weg, und mit ihm GOPRIVATE und die Anmeldung.
+replace github.com/ohartwig/s3mail => git.ole-hartwig.eu/development/s3mail/s3mail v1.6.0
+
 require (
-	git.ole-hartwig.eu/development/s3mail/s3mail/go v1.5.0
 	github.com/aws/aws-sdk-go-v2 v1.43.8
+	github.com/ohartwig/s3mail v1.6.0
 	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
 )
 

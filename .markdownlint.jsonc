@@ -1,0 +1,15 @@
+{
+  // markdownlint-cli2 config for this repository, the same three switched off
+  // as in the core and in the shared lint-markdown component's default.
+  "default": true,
+
+  // Line length, bare URLs, table pipe style - as the component's default.
+  "MD013": false,
+  "MD034": false,
+  "MD060": false,
+
+  // MD033 no-inline-html. The README shows four App Store screenshots in a
+  // row; markdown has no way to give an image a width, and four 6.9-inch
+  // screenshots at full size are a scroll, not a row.
+  "MD033": false
+}
