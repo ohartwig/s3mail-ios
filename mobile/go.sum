@@ -1,5 +1,5 @@
-git.ole-hartwig.eu/development/s3mail/s3mail/go v1.5.0 h1:RmmBUk/+dSkgZULn0Fv9hn1JdR33lbIYRa1FJ2R30Ns=
-git.ole-hartwig.eu/development/s3mail/s3mail/go v1.5.0/go.mod h1:eB9lKYzuQp8Simgrhj5zmLuQjDu4N6DIdoMPt74eKng=
+git.ole-hartwig.eu/development/s3mail/s3mail v1.6.0 h1:KsEpAsfYTTLGQW06QY84JMuDBYon8/Dn68rbS6ehCVI=
+git.ole-hartwig.eu/development/s3mail/s3mail v1.6.0/go.mod h1:xoQBQh7N2CopcPE8fbLau5Zio7RXlEhpQEIC6u9vI/I=
 github.com/aws/aws-sdk-go-v2 v1.43.8 h1:fpnrxwuwsoGIgjvgLeDU3y9w7YaHBxyF6AF3vQL8duw=
 github.com/aws/aws-sdk-go-v2 v1.43.8/go.mod h1:j7gYSq8dL95QejkFXxvQNESH4I9WGHFI6iO+vhqEi5Q=
 github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.18 h1:LAfOuhAH331fmOjTQpAaOlH+Ftn7RzSDJ2VFwjdMMy4=

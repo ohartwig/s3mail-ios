@@ -105,6 +105,29 @@ include:
         - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_TAG == null && $CI_PIPELINE_SOURCE == "push"
         - when: never
 
+# The public mirror, from the estate's component: the history rewritten
+# without CLAUDE.md, .claude/ and .gitlab/ (none of them is here today; the
+# list is for the day one arrives), main and the v-tags force-pushed to
+# GitHub with --prune. On a push to main only. The app itself ships through
+# the App Store, so there is no github-release job.
+#
+# GITHUB_MIRROR_TOKEN is a fine-grained token with contents:write on the
+# mirror repository, the one stored secret this project has.
+include:
+  # renovate: datasource=gitlab-tags depName=devops/ci-cd-components/extension-clean-export
+  - component: ${CI_SERVER_HOST}/devops/ci-cd-components/extension-clean-export/github-mirror@1.4.1
+    inputs:
+      stage: .post
+      mirror-target: 'ohartwig/s3mail-ios'
+      mirror-token-var: 'GITHUB_MIRROR_TOKEN'
+      strip-paths: ['CLAUDE.md', '.claude', '.gitlab']
+      keep-tags: 'v*'
+      prune: 'true'
+      rules-config:
+        - if: $GITHUB_MIRROR_TOKEN == null
+          when: never
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+
 stages:
   - test
   - build

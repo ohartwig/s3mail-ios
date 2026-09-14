@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"git.ole-hartwig.eu/development/s3mail/s3mail/go/awsx"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/go/core"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/go/mailer"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/go/mimeparse"
-	"git.ole-hartwig.eu/development/s3mail/s3mail/go/store"
+	"github.com/ohartwig/s3mail/awsx"
+	"github.com/ohartwig/s3mail/core"
+	"github.com/ohartwig/s3mail/mailer"
+	"github.com/ohartwig/s3mail/mimeparse"
+	"github.com/ohartwig/s3mail/store"
 )
 
 // Writing and sending, from the phone.
