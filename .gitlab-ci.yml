@@ -1,24 +1,23 @@
 # SPDX-FileCopyrightText: 2026 Kai Ole Hartwig <mail@ole-hartwig.eu>
 #
-# Pipeline für s3mail-ios.
+# Pipeline for s3mail-ios.
 #
-# Sie zerfällt in zwei Hälften, und die Trennung ist der ganze Punkt:
+# It falls into two halves, and the split is the whole point:
 #
-#   * Die **Go-Seite der Brücke** braucht keinen Mac. Formatierung, vet und ein
-#     Bau für iOS-arm64 laufen auf dem gewöhnlichen Linux-Runner. Das ist der
-#     Teil, in dem die Fehler entstehen, die man ohne Xcode findet - eine
-#     Signatur, die sich geändert hat, ein Feld, das die Fassade nicht mehr
-#     kennt.
+#   * The **Go side of the bridge** needs no Mac. Formatting, vet and a build
+#     run on the ordinary Linux runner. That is where the errors happen that
+#     one finds without Xcode - a signature that changed, a field the facade
+#     no longer knows.
 #
-#   * Alles mit Xcode braucht einen Mac. Diese Jobs tragen `tags: [mac]` und
-#     laufen **nur**, wenn `MAC_RUNNER` gesetzt ist. Ohne den Runner blieben sie
-#     sonst hängen und jede Pipeline stünde auf "stuck" - eine rote Ampel, die
-#     nichts über den Code aussagt.
+#   * Everything with Xcode needs a Mac. Those jobs carry `tags: [mac]` and run
+#     **only** when `MAC_RUNNER` is set. Without the runner they would hang,
+#     and every pipeline would sit on "stuck" - a red light that says nothing
+#     about the code.
 #
-# Wenn der Mac-Runner steht: Projektvariable `MAC_RUNNER = yes` setzen. Der
-# Runner braucht Tag `mac` und ausdrücklich **kein** "run untagged jobs" - sonst
-# nimmt er die Linux-Jobs des ganzen Bestands an und ist damit beschäftigt,
-# während niemand eine App baut.
+# When the Mac runner is up: set the project variable `MAC_RUNNER = yes`. The
+# runner needs the tag `mac` and explicitly **no** "run untagged jobs" -
+# otherwise it picks up the Linux jobs of the whole estate and is busy with
+# them while nobody builds an app.
 
 # Merge-request pipelines, and with them any automated review at all: ai:review
 # runs on merge_request_event and on nothing else.
@@ -61,16 +60,19 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - when: never
 
-# The automated merge-request review, as in the core repository. Dispatch only:
-# this job holds no credential, it fires a downstream pipeline in
-# devops/ai-code-review whose protected default branch assumes the AWS role.
-#
-# No `stage`, so the component's default `.post` applies. A named stage would be
-# judged against the stages list below and would stop the pipeline from being
-# created at all, rather than merely skipping the job.
-#
-# renovate: datasource=gitlab-tags depName=devops/ci-cd-components/ai-tools/ai-review
+# One include list. Two `include:` keys in one file are legal YAML and the
+# second silently wins: for one day (2026-09-15) the mirror's own `include:`
+# shadowed this one, and main ran without version, release and ai:review.
 include:
+  # The automated merge-request review, as in the core repository. Dispatch
+  # only: this job holds no credential, it fires a downstream pipeline in
+  # devops/ai-code-review whose protected default branch assumes the AWS role.
+  #
+  # No `stage`, so the component's default `.post` applies. A named stage
+  # would be judged against the stages list below and would stop the pipeline
+  # from being created at all, rather than merely skipping the job.
+  #
+  # renovate: datasource=gitlab-tags depName=devops/ci-cd-components/ai-tools/ai-review
   - component: ${CI_SERVER_HOST}/devops/ci-cd-components/ai-tools/ai-review@1.2.26
     inputs:
       enabled: 'true'
@@ -88,9 +90,8 @@ include:
   # match the core, although nothing here matches on the tag.
   #
   # The rules are the component's own, with one addition: only on a real push
-  # (or a pipeline started by hand). Since the core triggers this repository on
-  # every change of its main branch (s3mail!63), those pipelines are protected,
-  # carry no tag, and would otherwise satisfy the default rule.
+  # (or a pipeline started by hand). A triggered pipeline is protected, carries
+  # no tag, and would otherwise satisfy the default rule.
   - component: ${CI_SERVER_HOST}/devops/ci-cd-components/release-tools/yasrt@2
     inputs:
       stage-version: .pre
@@ -105,15 +106,15 @@ include:
         - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_TAG == null && $CI_PIPELINE_SOURCE == "push"
         - when: never
 
-# The public mirror, from the estate's component: the history rewritten
-# without CLAUDE.md, .claude/ and .gitlab/ (none of them is here today; the
-# list is for the day one arrives), main and the v-tags force-pushed to
-# GitHub with --prune. On a push to main only. The app itself ships through
-# the App Store, so there is no github-release job.
-#
-# GITHUB_MIRROR_TOKEN is a fine-grained token with contents:write on the
-# mirror repository, the one stored secret this project has.
-include:
+  # The public mirror, from the estate's component: the history rewritten
+  # without CLAUDE.md, .claude/ and .gitlab/ (none of them is here today; the
+  # list is for the day one arrives), main and the v-tags force-pushed to
+  # GitHub with --prune. On a push to main, or a run started by hand there.
+  # The app itself ships through the App Store, so there is no github-release
+  # job.
+  #
+  # GITHUB_MIRROR_TOKEN is a fine-grained token with contents:write on the
+  # mirror repository, the one stored secret this project has.
   # renovate: datasource=gitlab-tags depName=devops/ci-cd-components/extension-clean-export
   - component: ${CI_SERVER_HOST}/devops/ci-cd-components/extension-clean-export/github-mirror@1.4.1
     inputs:
@@ -126,9 +127,9 @@ include:
       rules-config:
         - if: $GITHUB_MIRROR_TOKEN == null
           when: never
-        # push, and web: a run started by hand on main mirrors too - the
+        # push, web and api: a run started by hand on main mirrors too - the
         # first fill of the repository on GitHub was exactly that.
-        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web")
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api")
 
 stages:
   - test
@@ -139,14 +140,14 @@ stages:
   - release
 
 variables:
-  # Dasselbe goldene Bild wie im Kern. Zwei Go-Versionen für dasselbe Programm
-  # wären zwei Möglichkeiten, unterschiedliche Ergebnisse zu bekommen.
+  # The same golden image as the core. Two Go versions for the same program
+  # would be two ways of getting different results.
   GO_IMAGE: "registry.ole-hartwig.eu/devops/images/golang:1.27"
   GOTOOLCHAIN: "local"
-  # readonly und nicht mod: mit -mod=mod darf der Bau go.mod und go.sum
-  # stillschweigend aendern, statt an einer fehlenden Abhaengigkeit zu
-  # scheitern. Die CI reparierte dann ein Problem, statt es zu melden, und der
-  # Auscheck auf dem Rechner bliebe kaputt. Der Kern haelt es genauso.
+  # readonly, not mod: with -mod=mod the build may silently change go.mod and
+  # go.sum instead of failing on a missing dependency. CI would then repair a
+  # problem instead of reporting it, and the checkout on the desk would stay
+  # broken. The core does the same.
   GOFLAGS: "-mod=readonly"
   GOPATH: "${CI_PROJECT_DIR}/.go"
   # The core is a versioned dependency like any other - mobile/go.mod says
@@ -156,7 +157,7 @@ variables:
   # login; both went with the mirror.
 
 # --------------------------------------------------------------------------- #
-# Die Brücke, ohne Mac
+# The bridge, without a Mac
 # --------------------------------------------------------------------------- #
 bridge:
   stage: build
@@ -171,74 +172,72 @@ bridge:
   before_script:
     - cd mobile
   script:
-    - test -z "$(gofmt -l .)" || { echo "nicht formatiert:"; gofmt -l .; exit 1; }
+    - test -z "$(gofmt -l .)" || { echo "not formatted:"; gofmt -l .; exit 1; }
     - go vet ./...
-    # Gebaut wird für Linux, nicht für iOS - und das ist keine Nachlässigkeit,
-    # sondern das, was hier überhaupt geht: `GOOS=ios` verlangt CGO und damit
-    # eine clang-Toolchain mit iOS-SDK. Auf einem Mac ist die da, auf dem
-    # Linux-Runner nicht, und der Job scheiterte an der Umgebung statt am Code.
+    # Built for Linux, not for iOS - and that is not carelessness but what is
+    # possible here at all: `GOOS=ios` needs CGO and with it a clang toolchain
+    # with the iOS SDK. A Mac has it, the Linux runner does not, and the job
+    # failed on the environment rather than on the code.
     #
-    # Für iOS baut der framework-Job auf dem Mac. Was dieser Job leistet, ist
-    # der Teil, der ohne Xcode zu haben ist: dass die Fassade den Kern noch
-    # kennt, dass keine Signatur weggewandert ist, dass nichts unformatiert
-    # hereinkommt. Genau dort entstehen die Fehler, für die man sonst zwanzig
-    # Minuten auf einen Mac wartet.
+    # For iOS, the framework job builds on the Mac. What this job delivers is
+    # the part that is to be had without Xcode: that the facade still knows
+    # the core, that no signature has wandered off, that nothing arrives
+    # unformatted. That is exactly where the errors happen that one would
+    # otherwise wait twenty minutes on a Mac for.
     - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./...
 
 # --------------------------------------------------------------------------- #
-# Alles mit Xcode
+# Everything with Xcode
 # --------------------------------------------------------------------------- #
 .mac:
   tags: [mac]
   variables:
-    # GOPATH steht hier bewusst NICHT, sondern wird unten mit export gesetzt.
+    # GOPATH is deliberately NOT here; it is exported below.
     #
-    # Ein `GOPATH: "$HOME/go"` an dieser Stelle laeuft erst durch GitLabs eigene
-    # Ersetzung, und GitLab kennt $HOME nicht: uebrig bleibt "/go", und der Job
-    # scheitert mit "could not create module cache: mkdir /go: read-only file
-    # system". Was hier steht, wird von GitLab aufgeloest, nicht von der Shell.
+    # A `GOPATH: "$HOME/go"` at this point first runs through GitLab's own
+    # substitution, and GitLab does not know $HOME: what remains is "/go", and
+    # the job fails with "could not create module cache: mkdir /go: read-only
+    # file system". What stands here is resolved by GitLab, not by the shell.
     GIT_DEPTH: "20"
-    # git clean laeuft VOR jedem Skript, also laesst sich ein Ueberbleibsel im
-    # Job nicht mehr aufraeumen - der Job stirbt vorher. Und Ueberbleibsel gibt
-    # es: Gos Modul-Cache ist schreibgeschuetzt (0444), git kommt nicht heran,
-    # und ein einziger Lauf mit GOPATH im Projektverzeichnis verkeilt den
-    # Runner dauerhaft. Genau so ist es hier zweimal passiert.
+    # git clean runs BEFORE every script, so a leftover cannot be cleaned up
+    # inside the job any more - the job dies first. And there are leftovers:
+    # Go's module cache is write-protected (0444), git cannot get at it, and a
+    # single run with GOPATH inside the project directory jams the runner for
+    # good. That is exactly what happened here, twice.
     #
-    # -e .go nimmt das Verzeichnis vom Aufraeumen aus. Damit heilt sich der
-    # Runner selbst, statt dass jemand per Hand chmod und rm ausfuehren muss.
+    # -e .go excludes the directory from the cleanup. The runner then heals
+    # itself instead of somebody running chmod and rm by hand.
     GIT_CLEAN_FLAGS: "-ffdx -e .go"
-  # Ein Rechner, ein Xcode, ein Simulator - und der Shell-Executor legt Jobs
-  # desselben Projekts ins selbe Verzeichnis. Zwei `xcodebuild test`
-  # gleichzeitig treten sich dort gegenseitig auf die Fuesse, und der Fehler
-  # sieht jedes Mal anders aus. resource_group laesst nur einen Mac-Job zur
-  # Zeit laufen.
+  # One machine, one Xcode, one simulator - and the shell executor puts jobs of
+  # the same project into the same directory. Two `xcodebuild test` at the same
+  # time step on each other's toes there, and the error looks different every
+  # time. resource_group lets only one Mac job run at a time.
   resource_group: mac
   rules:
-    # Ohne Runner keine Jobs - und ohne Jobs auch keine Pipeline, die auf
-    # "stuck" steht und nichts über den Code aussagt.
+    # No runner, no jobs - and no jobs, no pipeline that sits on "stuck" and
+    # says nothing about the code.
     - if: $MAC_RUNNER == "yes"
   needs: []
   before_script:
-    # GOPATH aus dem Projektverzeichnis heraus, und per export statt per
-    # variables: nur die Shell kennt $HOME.
+    # GOPATH out of the project directory, and by export rather than by
+    # variables: only the shell knows $HOME.
     #
-    # Warum ueberhaupt heraus: Gos Modul-Cache ist absichtlich
-    # schreibgeschuetzt (0444), damit niemand versehentlich eine Abhaengigkeit
-    # aendert. Der Shell-Executor behaelt sein Arbeitsverzeichnis zwischen
-    # Laeufen, und `git clean` kommt an diese Dateien nicht heran - der
-    # naechste Job stirbt dann beim Auschecken mit "Permission denied", lange
-    # vor dem ersten Skript. Unter Docker faellt das nie auf, weil jeder Job
-    # einen frischen Container bekommt.
+    # Why out at all: Go's module cache is deliberately write-protected (0444)
+    # so that nobody changes a dependency by accident. The shell executor keeps
+    # its working directory between runs, and `git clean` cannot get at those
+    # files - the next job then dies at checkout with "Permission denied", long
+    # before the first script. Under Docker this never shows, because every
+    # job gets a fresh container.
     #
-    # Nebenbei schneller: der Cache ueberlebt auf der Maschine.
+    # Faster as a side effect: the cache survives on the machine.
     - export GOPATH="$HOME/go"
-    # Was auf diesem Rechner ueberhaupt steht - drei Zeilen, die beim ersten
-    # Fehlschlag auf einem neuen Bau-Rechner die halbe Fehlersuche sparen.
-    # Beim allerersten Lauf war es "gomobile: command not found", und ohne das
-    # hier raet man, ob Go fehlt, Xcode, oder nur ein Pfad.
-    - go version || echo "kein Go auf diesem Runner"
+    # What is on this machine at all - three lines that save half the
+    # troubleshooting on the first failure on a new build machine. On the very
+    # first run it was "gomobile: command not found", and without this one
+    # guesses whether Go is missing, Xcode, or just a path.
+    - go version || echo "no Go on this runner"
     - xcodebuild -version | head -2
-    - xcrun simctl list runtimes | grep -i ios || echo "keine iOS-Laufzeit - xcodebuild -downloadPlatform iOS"
+    - xcrun simctl list runtimes | grep -i ios || echo "no iOS runtime - xcodebuild -downloadPlatform iOS"
 
 framework:
   extends: .mac
@@ -255,11 +254,10 @@ package:
   stage: build
   needs: [framework]
   script:
-    # Die Tests gegen ein echtes Postfach überspringen sich ohne Zugangsdaten
-    # still. Das ist hier richtig: die Pipeline soll nicht in fremde Post sehen.
-    # Wer sie laufen lassen will, setzt TEST_RUNNER_S3MAIL_* als geschützte
-    # Variablen - das Präfix ist Pflicht, xcodebuild reicht nichts anderes an
-    # das Testbündel weiter.
+    # The tests against a real mailbox skip silently without credentials. That
+    # is right here: the pipeline must not look into somebody's mail. Whoever
+    # wants them to run sets TEST_RUNNER_S3MAIL_* as protected variables - the
+    # prefix is mandatory, xcodebuild passes nothing else to the test bundle.
     - make test
 
 app:
@@ -267,7 +265,7 @@ app:
   stage: build
   needs: [framework]
   script:
-    # Der Simulator verlangt keine Signatur, und ein Signaturschlüssel auf dem
-    # Bau-Runner wäre ein Schlüssel mehr, der dort nichts zu suchen hat.
-    # Signiert wird beim Verteilen, nicht beim Prüfen.
+    # The simulator demands no signature, and a signing key on the build runner
+    # would be one more key that has no business there. Signing happens when
+    # distributing, not when testing.
     - make app-test
