@@ -35,7 +35,7 @@ test: framework
 	xcodebuild test -scheme S3mailKit -destination 'platform=iOS Simulator,name=iPhone 17' | tail -20
 
 SIM ?= platform=iOS Simulator,name=iPhone 17 Pro
-# Das 6,9-Zoll-Geraet, fuer das Apple die Screenshots verlangt.
+# The 6.9-inch device Apple wants the screenshots from.
 SHOT_SIM ?= platform=iOS Simulator,name=iPhone 17 Pro Max
 
 app: framework
@@ -48,9 +48,9 @@ app-test: framework
 	xcodebuild test -project ios-app/s3mail.xcodeproj -scheme s3mail \
 		-skip-testing:UITests -destination '$(SIM)' | tail -20
 
-# Die App-Store-Screenshots. Getrennt von app-test, weil sie den Simulator
-# hochfahren und die App durchklicken - das gehoert nicht in jeden Testlauf.
-# Die Bilder landen als Anhaenge im Result-Bundle; herausholen mit
+# The App Store screenshots. Separate from app-test because they boot the
+# simulator and click through the app - that does not belong in every test
+# run. The images land as attachments in the result bundle; extract them with
 # `xcrun xcresulttool export attachments --path shots.xcresult --output-path .`
 shots: framework
 	rm -rf shots.xcresult
