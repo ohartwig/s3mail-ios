@@ -196,19 +196,10 @@ prüft, ist die Brücke, nicht das Ziel.
 seit dem 14.09.2026 liegt die `go.mod` des Kerns im Wurzelverzeichnis, und
 `v1.6.0` ist die Version, ohne ein `go/`-Präfix am Tag.
 
-Bis der öffentliche Spiegel auf GitHub steht, holt Go den Kern noch von
-GitLab: ein `replace` auf `git.ole-hartwig.eu/development/s3mail/s3mail` in
-derselben Version — das Fork-Muster, die `go.mod` dort trägt den GitHub-Namen.
-Der Kern ist dort nicht öffentlich, lokal braucht Go darum zweierlei:
-
-    export GOPRIVATE=git.ole-hartwig.eu
-    # ~/.netrc, Rechte 0600:
-    machine git.ole-hartwig.eu login <benutzer> password <token mit read_repository>
-
-Ohne Anmeldung antwortet GitLab auf Gos Modulanfrage nicht mit einem Fehler,
-sondern mit der Gruppe als Modul — und `go` klont dann etwas, das kein
-Repository ist. Die Pipeline meldet sich mit dem Job-Token an. Sobald der
-Spiegel steht, fallen `replace`, `GOPRIVATE` und die Anmeldung weg.
+Der Kern ist öffentlich, also kommt er wie jede andere Abhängigkeit über den
+Go-Proxy und die Summendatenbank — keine Anmeldung, kein `GOPRIVATE`. (Bis
+zum 15.09.2026 holte ihn ein `replace` in derselben Version von GitLab, mit
+`GOPRIVATE` und `~/.netrc`; das ist Geschichte.)
 
 Eine neue Kern-Version kommt wie jede andere Abhängigkeit: als Merge Request
 von pinup, mit `go mod tidy` im Gepäck. Wer lokal gegen einen ungetaggten

@@ -1,5 +1,3 @@
-git.ole-hartwig.eu/development/s3mail/s3mail v1.6.0 h1:KsEpAsfYTTLGQW06QY84JMuDBYon8/Dn68rbS6ehCVI=
-git.ole-hartwig.eu/development/s3mail/s3mail v1.6.0/go.mod h1:xoQBQh7N2CopcPE8fbLau5Zio7RXlEhpQEIC6u9vI/I=
 github.com/aws/aws-sdk-go-v2 v1.47.0 h1:0jsHallhJCeaU0Ko48c/3FK1ctOQ7NpzggxriJOQ8MQ=
 github.com/aws/aws-sdk-go-v2 v1.47.0/go.mod h1:bttEH6JqnUL8LepvDVfdrds/fZ5bCIxzpe3abyUrhDU=
 github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.18 h1:LAfOuhAH331fmOjTQpAaOlH+Ftn7RzSDJ2VFwjdMMy4=
@@ -52,6 +50,8 @@ github.com/emersion/go-message v0.18.2 h1:rl55SQdjd9oJcIoQNhubD2Acs1E6IzlZISRTK7
 github.com/emersion/go-message v0.18.2/go.mod h1:XpJyL70LwRvq2a8rVbHXikPgKj8+aI0kGdHlg16ibYA=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+github.com/ohartwig/s3mail v1.6.1 h1:HRZU9sttFHy5oKzlMDi5UrBEbE5KbVzDS0KdD3Jxpbs=
+github.com/ohartwig/s3mail v1.6.1/go.mod h1:xoQBQh7N2CopcPE8fbLau5Zio7RXlEhpQEIC6u9vI/I=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=

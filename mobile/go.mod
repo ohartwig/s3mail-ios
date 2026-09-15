@@ -1,33 +1,28 @@
-// Die Bruecke zwischen dem Go-Kern und Swift.
+// The bridge between the Go core and Swift.
 //
-// Eigenes Modul, und das ist der Punkt: gomobile verlangt
-// golang.org/x/mobile als Abhaengigkeit, und s3mail nimmt laut CLAUDE.md nur
-// Standardbibliothek plus AWS-SDK und go-message. Die Abhaengigkeit gehoert
-// also hierher und nicht dorthin - moeglich erst, seit der Kern einen
-// aufloesbaren Modulpfad hat.
+// A module of its own, and that is the point: gomobile requires
+// golang.org/x/mobile, and the core takes nothing beyond the standard
+// library, the AWS SDK and go-message. The dependency belongs here, not
+// there - possible only since the core has a resolvable module path.
 module github.com/ohartwig/s3mail-ios/mobile
 
 go 1.27.0
 
-// Der Kern kommt als Version, wie jede andere Abhaengigkeit.
+// The core is a versioned dependency like any other.
 //
-// Sein Modulpfad ist github.com/ohartwig/s3mail, seine go.mod liegt seit
-// 2026-09-14 im Wurzelverzeichnis, und vX.Y.Z ist die Version. Bis dahin
-// zeigte ein replace auf ein Schwester-Checkout; damit baute dieses Repo nur
-// in genau einer Verzeichnisstruktur, und jedes `go mod tidy` ausserhalb -
-// etwa das einer Abhaengigkeitsaktualisierung - scheiterte.
+// Its module path is github.com/ohartwig/s3mail; its go.mod has lived at the
+// repository root since 2026-09-14, so vX.Y.Z is the version. Before that a
+// replace pointed at a sibling checkout, which made this repository build in
+// exactly one directory layout and failed every `go mod tidy` outside it -
+// the one a dependency update runs, for instance.
 //
-// Solange der oeffentliche Spiegel auf GitHub nicht steht, holt Go den Kern
-// von GitLab: das replace unten zeigt auf denselben Stand unter dem
-// GitLab-Pfad (das Fork-Muster - die go.mod dort traegt den GitHub-Namen).
-// Dafuer GOPRIVATE=git.ole-hartwig.eu und eine Anmeldung in ~/.netrc, lokal
-// wie in der Pipeline (.gitlab-ci.yml sagt wie). Mit dem Spiegel faellt das
-// replace weg, und mit ihm GOPRIVATE und die Anmeldung.
-replace github.com/ohartwig/s3mail => git.ole-hartwig.eu/development/s3mail/s3mail v1.6.0
+// Public since 2026-09-15, so it comes through the proxy and the checksum
+// database like every other dependency; until then a replace pointed at the
+// same revision under the GitLab path, with GOPRIVATE and a login.
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.47.0
-	github.com/ohartwig/s3mail v1.6.0
+	github.com/ohartwig/s3mail v1.6.1
 	golang.org/x/mobile v0.0.0-20260908204917-8b95e45f8d3e
 )
 
