@@ -1,3 +1,24 @@
+## [1.2.0](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.1.0...v1.2.0) (2026-09-15)
+
+### :sparkles: Features
+
+* **mobile:** the core comes from GitHub, like every other dependency ([441a1ee](https://git.ole-hartwig.eu/development/s3mail/ios/commit/441a1ee3b4e76765329f1a93a6661db5ad1ed8f1))
+* die App ist öffentlich, und der Kern heißt github.com/ohartwig/s3mail ([763d4a1](https://git.ole-hartwig.eu/development/s3mail/ios/commit/763d4a17b8de30fa404662f47d964b4e63db59c3))
+
+### :bug: Fixes
+
+* **ci:** one include list, and the pipeline's comments in English ([6793c53](https://git.ole-hartwig.eu/development/s3mail/ios/commit/6793c530c2ca9a88fde2d7075a88fcce4a76bc60))
+* **deps:** update golang.org/x/mobile digest to 8b95e45 ([302adc1](https://git.ole-hartwig.eu/development/s3mail/ios/commit/302adc171c089597f6aeab919de506104c74ddf7))
+* **deps:** update module github.com/aws/aws-sdk-go-v2 to v1.47.0 ([024afde](https://git.ole-hartwig.eu/development/s3mail/ios/commit/024afdeea95e78f00bde7b7c7e9a16190f38bd6d))
+
+### :repeat: Continuous Integrations
+
+* **deps:** update dependency devops/ci-cd-components/ai-tools to v1.2.26 ([d3ae4fb](https://git.ole-hartwig.eu/development/s3mail/ios/commit/d3ae4fb41d9f02d6aba18e6f91a14e450bc07992))
+
+### :repeat: Chores
+
+* **deps:** update module golang.org/x/mod to v0.40.0 [security] ([4f035ba](https://git.ole-hartwig.eu/development/s3mail/ios/commit/4f035ba3867b228ad97d334781e3c80586ebfd0b))
+
 ## [1.1.0](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.0.1...v1.1.0) (2026-09-14)
 
 ### :sparkles: Features
