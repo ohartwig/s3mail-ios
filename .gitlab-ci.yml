@@ -126,7 +126,9 @@ include:
       rules-config:
         - if: $GITHUB_MIRROR_TOKEN == null
           when: never
-        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+        # push, and web: a run started by hand on main mirrors too - the
+        # first fill of the repository on GitHub was exactly that.
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web")
 
 stages:
   - test
@@ -147,31 +149,11 @@ variables:
   # Auscheck auf dem Rechner bliebe kaputt. Der Kern haelt es genauso.
   GOFLAGS: "-mod=readonly"
   GOPATH: "${CI_PROJECT_DIR}/.go"
-  # Der Kern kommt als Modul mit Version, wie jede andere Abhaengigkeit -
-  # mobile/go.mod sagt welche. Er ist nicht oeffentlich, also holt Go ihn
-  # direkt von git.ole-hartwig.eu statt ueber den Proxy und prueft ihn nicht
-  # gegen die Summendatenbank (GOPRIVATE deckt beides ab). Angemeldet wird
-  # mit dem Job-Token, siehe .go-private; dafuer muss dieses Projekt in der
-  # Job-Token-Allowlist des Kerns stehen (seit 2026-08-31), sonst kommt ein
-  # 403, das wie ein fehlendes Projekt aussieht.
-  GOPRIVATE: "git.ole-hartwig.eu"
-
-# --------------------------------------------------------------------------- #
-# Anmeldung fuer den Kern
-# --------------------------------------------------------------------------- #
-# Zwei Wege zum selben Token, weil zwei Programme fragen: Go selbst fuer die
-# go-import-Auskunft (liest NETRC), und git, das Go zum Klonen aufruft (liest
-# seine Konfiguration, hier per Umgebung statt per Datei, denn auf dem Mac ist
-# das Home des Runners nicht das Home dieses Jobs). Ohne Anmeldung antwortet
-# GitLab auf die Auskunft nicht mit 401, sondern mit der Gruppe als Modul, und
-# Go klont dann etwas, das kein Repository ist (gemessen 2026-09-14).
-.go-private:
-  before_script:
-    - umask 077 && printf 'machine %s login gitlab-ci-token password %s\n' "${CI_SERVER_HOST}" "${CI_JOB_TOKEN}" > "${CI_PROJECT_DIR}/.netrc"
-    - export NETRC="${CI_PROJECT_DIR}/.netrc"
-    - |
-      export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.${CI_SERVER_URL}/.extraheader"
-      export GIT_CONFIG_VALUE_0="Authorization: Basic $(printf 'gitlab-ci-token:%s' "${CI_JOB_TOKEN}" | base64 | tr -d '\n')"
+  # The core is a versioned dependency like any other - mobile/go.mod says
+  # which version - and fetched like any other, through the proxy and the
+  # checksum database: it is public, github.com/ohartwig/s3mail. Until
+  # 2026-09-15 it came from git.ole-hartwig.eu, with GOPRIVATE and a job-token
+  # login; both went with the mirror.
 
 # --------------------------------------------------------------------------- #
 # Die Brücke, ohne Mac
@@ -187,7 +169,6 @@ bridge:
     paths:
       - .go/pkg/mod
   before_script:
-    - !reference [.go-private, before_script]
     - cd mobile
   script:
     - test -z "$(gofmt -l .)" || { echo "nicht formatiert:"; gofmt -l .; exit 1; }
@@ -238,7 +219,6 @@ bridge:
     - if: $MAC_RUNNER == "yes"
   needs: []
   before_script:
-    - !reference [.go-private, before_script]
     # GOPATH aus dem Projektverzeichnis heraus, und per export statt per
     # variables: nur die Shell kennt $HOME.
     #
