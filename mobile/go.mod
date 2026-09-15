@@ -28,7 +28,7 @@ replace github.com/ohartwig/s3mail => git.ole-hartwig.eu/development/s3mail/s3ma
 require (
 	github.com/aws/aws-sdk-go-v2 v1.47.0
 	github.com/ohartwig/s3mail v1.6.0
-	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
+	golang.org/x/mobile v0.0.0-20260908204917-8b95e45f8d3e
 )
 
 require (
@@ -56,8 +56,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.7 // indirect
 	github.com/aws/smithy-go v1.28.1 // indirect
 	github.com/emersion/go-message v0.18.2 // indirect
-	golang.org/x/mod v0.40.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
-	golang.org/x/tools v0.49.0 // indirect
+	golang.org/x/tools v0.50.0 // indirect
 )
