@@ -50,8 +50,8 @@ github.com/emersion/go-message v0.18.2 h1:rl55SQdjd9oJcIoQNhubD2Acs1E6IzlZISRTK7
 github.com/emersion/go-message v0.18.2/go.mod h1:XpJyL70LwRvq2a8rVbHXikPgKj8+aI0kGdHlg16ibYA=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/ohartwig/s3mail v1.6.1 h1:HRZU9sttFHy5oKzlMDi5UrBEbE5KbVzDS0KdD3Jxpbs=
-github.com/ohartwig/s3mail v1.6.1/go.mod h1:xoQBQh7N2CopcPE8fbLau5Zio7RXlEhpQEIC6u9vI/I=
+github.com/ohartwig/s3mail v1.6.2 h1:RIuXFUHZ8zdCrH/JhfwkYC14V9Tfaz2jUCrGThhTsN0=
+github.com/ohartwig/s3mail v1.6.2/go.mod h1:xoQBQh7N2CopcPE8fbLau5Zio7RXlEhpQEIC6u9vI/I=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
