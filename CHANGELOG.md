@@ -1,3 +1,13 @@
+## [1.2.12](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.11...v1.2.12) (2026-10-16)
+
+### :bug: Fixes
+
+* **cache:** encrypt the on-device cache and keep it out of backups ([7f1ba4a](https://git.ole-hartwig.eu/development/s3mail/ios/commit/7f1ba4a95096c519e0f68f18e9d1fef92fdab7b8))
+
+### :repeat: Continuous Integrations
+
+* **deps:** update dependency devops/ci-cd-components/extension-clean-export to v1.7.0 ([bc2eba1](https://git.ole-hartwig.eu/development/s3mail/ios/commit/bc2eba1f1a477f7d8dfc325e489915892af938e8))
+
 ## [1.2.11](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.10...v1.2.11) (2026-10-13)
 
 ### :bug: Fixes
