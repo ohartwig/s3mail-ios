@@ -1,3 +1,9 @@
+## [1.2.13](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.12...v1.2.13) (2026-10-16)
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([c606f98](https://git.ole-hartwig.eu/development/s3mail/ios/commit/c606f982a7539179d2d34bfdfeb381fe2598496f))
+
 ## [1.2.12](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.11...v1.2.12) (2026-10-16)
 
 ### :bug: Fixes
