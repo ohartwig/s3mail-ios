@@ -34,6 +34,19 @@ final class KeychainTests: XCTestCase {
     override func setUp() { super.setUp(); wipe() }
     override func tearDown() { wipe(); super.tearDown() }
 
+    /// The cache key: minted once, the same on every later call, and 32 bytes.
+    /// A second call that minted a new key would throw the whole cache away on
+    /// every launch - and a key that is not 32 bytes is not an AES-256 key.
+    func testTheCacheKeyIsMintedOnceAndStays() throws {
+        try Keychain.forgetCacheKey()
+        let first = try Keychain.cacheKey()
+        XCTAssertEqual(Data(base64Encoded: first)?.count, 32)
+        XCTAssertEqual(try Keychain.cacheKey(), first, "a second call minted a new key")
+
+        try Keychain.forgetCacheKey()
+        XCTAssertNotEqual(try Keychain.cacheKey(), first, "forgetting the key kept it")
+    }
+
     func testWhatGoesInComesBack() throws {
         try Keychain.save(sample)
         XCTAssertEqual(try Keychain.load(id: sample.id), sample)

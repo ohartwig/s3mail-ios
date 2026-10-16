@@ -79,10 +79,14 @@ Code:
 
 - **Der Index liegt in Application Support, nicht in Caches.** iOS leert `Caches`,
   wann es will — meist ohne Netz.
-- **Kein zweites Verschlüsseln.** Am Schreibtisch wird verschlüsselt, weil ein
-  Heimatverzeichnis in Backups und synchronisierten Ordnern mitreist. Eine
-  App-Sandbox tut das nicht: sie steht schon unter dem Dateischutz des Geräts,
-  und ein zweiter Schlüssel wäre mehr Fläche als Schutz.
+- **Der Cache ist verschlüsselt, und er ist nicht im Backup.** Bis 1.2.11 war
+  er beides nicht, mit der Begründung, eine App-Sandbox reise nicht mit wie ein
+  Heimatverzeichnis. Sie tut es: Application Support liegt in jedem iCloud- und
+  Finder-Backup. Seitdem verschlüsselt der Kern Index, Zustandskopie und
+  Mailtexte mit einem Schlüssel aus dem Schlüsselbund des Geräts
+  (`AfterFirstUnlockThisDeviceOnly`, also nie auf einem zweiten Gerät), und das
+  Verzeichnis `mailboxes` ist vom Backup ausgenommen. Ein Backup trägt damit
+  weder Schlüssel noch Klartext.
 - **`allowDelete` bleibt aus.** Das Telefon zeigt und verschiebt; Löschen ist
   eine Entscheidung für den Schreibtisch.
 

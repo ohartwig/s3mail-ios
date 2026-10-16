@@ -235,16 +235,18 @@ public final class Mailbox: @unchecked Sendable {
     ///
     /// The cache directory is handed to the core rather than guessed there: a Go
     /// library inside an app has no business deciding where that app keeps its
-    /// files. It is **not** encrypted a second time - the app sandbox is already
-    /// under the device's own file protection, and a second key to manage would
-    /// be more surface than shield. The desktop encrypts because a home
-    /// directory travels in backups; a sandbox does not.
+    /// files. The cache in it is encrypted with a key from the keychain, exactly
+    /// as the desktop does it. Until 1.2.11 it was not, on the argument that a
+    /// sandbox does not travel the way a home directory does; it does -
+    /// Application Support is in every iCloud and Finder backup - and the
+    /// directory is kept out of backups as well (AUD-008-F01).
     public init(setup: Setup) throws {
         self.setup = setup
         self.isDemo = false
         let dir = try Mailbox.cacheDirectory(for: setup)
+        let key = try Keychain.cacheKey()
         var err: NSError?
-        guard let inner = MobileOpen(try setup.encode(), dir.path, &err) else {
+        guard let inner = MobileOpen(try setup.encode(), dir.path, key, &err) else {
             throw err ?? CocoaError(.fileNoSuchFile)
         }
         self.inner = inner
@@ -285,17 +287,30 @@ public final class Mailbox: @unchecked Sendable {
     /// Application Support, not Caches: the index is cheap to rebuild but the
     /// state that comes with it is not, and iOS empties Caches when it feels
     /// like it - usually while somebody is on a train with no signal.
+    ///
+    /// Application Support is also in every iCloud and Finder backup, which
+    /// Caches is not. So the `mailboxes` directory is marked excluded from
+    /// backup - the state is in the bucket and the index rebuilds, nothing of
+    /// value is lost - and marked again on every call, because the flag lives
+    /// on the directory and a recreated one starts without it (AUD-008-F01).
     static func cacheDirectory(for setup: Setup) throws -> URL {
         let base = try FileManager.default.url(for: .applicationSupportDirectory,
                                                in: .userDomainMask,
                                                appropriateFor: nil, create: true)
-        let dir = base.appendingPathComponent("mailboxes", isDirectory: true)
-            .appendingPathComponent(setup.id.replacingOccurrences(of: "/", with: "_"),
-                                    isDirectory: true)
+        var mailboxes = base.appendingPathComponent("mailboxes", isDirectory: true)
+        try FileManager.default.createDirectory(at: mailboxes, withIntermediateDirectories: true,
+                                                attributes: nil)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try mailboxes.setResourceValues(values)
+
+        let dir = mailboxes.appendingPathComponent(setup.id.replacingOccurrences(of: "/", with: "_"),
+                                                   isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true,
                                                 attributes: nil)
-        // The sandbox is protected anyway; this says so out loud and survives a
-        // reboot before the first unlock, which a background refresh needs.
+        // Readable after the first unlock, not only while unlocked: a background
+        // refresh runs with the phone in a pocket. The confidentiality of what
+        // is written here rests on the cache key, not on this class.
         try (dir as NSURL).setResourceValue(
             URLFileProtection.completeUntilFirstUserAuthentication,
             forKey: .fileProtectionKey)
