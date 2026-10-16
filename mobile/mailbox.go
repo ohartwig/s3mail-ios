@@ -4,6 +4,7 @@
 package mobile
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -60,11 +61,19 @@ type setupPayload struct {
 // library inside an app has no business deciding where that app keeps its
 // files, and on iOS the answer is a sandbox path only the app knows.
 //
-// The cache is not encrypted here, and that is deliberate. On the desktop it is,
-// because a home directory travels in backups and synced folders. An app
-// sandbox does not: iOS protects it with the device passcode already, and a
-// second layer with a second key to manage would be more surface than shield.
-func Open(setupJSON, cacheDir string) (*Mailbox, error) {
+// cacheKey is the base64 form of the 32 bytes the app keeps in its keychain,
+// and the cache - index, state copy, message bodies - is encrypted with it the
+// way the desktop's is. Until 1.2.11 nil was passed here, on the argument that
+// a sandbox does not travel the way a home directory does. It does:
+// Application Support is in every iCloud and Finder backup, and a backup
+// without a password carried the last 256 MB of opened mail in clear text
+// (AUD-008-F01). A missing or malformed key is an error, not a fall back to
+// plain text; the quiet fall back is how this went unnoticed.
+func Open(setupJSON, cacheDir, cacheKey string) (*Mailbox, error) {
+	key, err := base64.StdEncoding.DecodeString(cacheKey)
+	if err != nil || len(key) != 32 {
+		return nil, errors.New("the cache key is missing or malformed")
+	}
 	var s setupPayload
 	if err := json.Unmarshal([]byte(setupJSON), &s); err != nil {
 		return nil, errors.New("that is not a mailbox")
@@ -83,7 +92,7 @@ func Open(setupJSON, cacheDir string) (*Mailbox, error) {
 	// allowDelete is false: what disappears on a phone should be recoverable.
 	// The trash is a folder, and emptying it is a decision for the desk.
 	inner := store.NewMailbox(ctx(), awsx.NewS3(cfg, ""), awsx.NewKMS(cfg, ""),
-		s.Bucket, prefix, cacheDir, nil, false)
+		s.Bucket, prefix, cacheDir, key, false)
 	return &Mailbox{inner: inner, setup: s, cfg: cfg}, nil
 }
 
