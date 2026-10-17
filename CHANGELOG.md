@@ -1,3 +1,13 @@
+## [1.2.14](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.13...v1.2.14) (2026-10-17)
+
+### :bug: Fixes
+
+* **deps:** update module github.com/ohartwig/s3mail to v1.6.10 ([0aad28b](https://git.ole-hartwig.eu/development/s3mail/ios/commit/0aad28b042cc61b9d6e3730054493857d2e7b681))
+
+### :repeat: Continuous Integrations
+
+* **deps:** update dependency devops/ci-cd-components/extension-clean-export to v1.7.1 ([1f69ac4](https://git.ole-hartwig.eu/development/s3mail/ios/commit/1f69ac43c8c4f3d0932517bb99443c216f43f3ba))
+
 ## [1.2.13](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.12...v1.2.13) (2026-10-16)
 
 ### :repeat: Chores
