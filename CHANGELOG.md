@@ -1,3 +1,15 @@
+## [1.2.17](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.16...v1.2.17) (2026-10-23)
+
+### :bug: Fixes
+
+* **deps:** update module github.com/aws/aws-sdk-go-v2 to v1.47.4 ([f9a5738](https://git.ole-hartwig.eu/development/s3mail/ios/commit/f9a5738f0dc733f8138f708a0287e75cdf639726))
+
+### :repeat: Continuous Integrations
+
+* follow components on the rolling major tag ([8347da6](https://git.ole-hartwig.eu/development/s3mail/ios/commit/8347da6e1cafcc5c2ee278a5af7dc6e821d9fe25))
+* **deps:** update dependency devops/ci-cd-components/extension-clean-export to v1.7.3 ([bb1014c](https://git.ole-hartwig.eu/development/s3mail/ios/commit/bb1014c14259a2269dde3dc265fe1523b7239191))
+* **deps:** update dependency devops/ci-cd-components/extension-clean-export to v1.7.2 ([2babb80](https://git.ole-hartwig.eu/development/s3mail/ios/commit/2babb800ec1deb2ac9fef6f1f905a94871b73c94))
+
 ## [1.2.16](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.15...v1.2.16) (2026-10-21)
 
 ### :bug: Fixes
