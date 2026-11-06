@@ -21,7 +21,7 @@ go 1.27.0
 // same revision under the GitLab path, with GOPRIVATE and a login.
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.47.6
+	github.com/aws/aws-sdk-go-v2 v1.47.7
 	github.com/ohartwig/s3mail v1.6.12
 	golang.org/x/mobile v0.0.0-20261011034528-197770444867
 )
