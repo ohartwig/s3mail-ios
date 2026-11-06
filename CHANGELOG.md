@@ -1,3 +1,9 @@
+## [1.2.20](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.19...v1.2.20) (2026-11-06)
+
+### :bug: Fixes
+
+* **deps:** update module github.com/aws/aws-sdk-go-v2 to v1.47.7 ([0d37e0f](https://git.ole-hartwig.eu/development/s3mail/ios/commit/0d37e0fc9d9f75620cb9fb43e2af4877da9f1c16))
+
 ## [1.2.19](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.18...v1.2.19) (2026-11-05)
 
 ### :bug: Fixes
