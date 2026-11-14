@@ -22,7 +22,7 @@ go 1.27.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.48.0
-	github.com/ohartwig/s3mail v1.6.20
+	github.com/ohartwig/s3mail v1.6.21
 	golang.org/x/mobile v0.0.0-20261011034528-197770444867
 )
 
