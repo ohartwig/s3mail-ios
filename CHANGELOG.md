@@ -1,3 +1,9 @@
+## [1.2.28](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.27...v1.2.28) (2026-11-16)
+
+### :bug: Fixes
+
+* **deps:** update module github.com/ohartwig/s3mail to v1.6.28 ([396ad9a](https://git.ole-hartwig.eu/development/s3mail/ios/commit/396ad9acd8380c6433472d2d83b4f459a3f261ec))
+
 ## [1.2.27](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.26...v1.2.27) (2026-11-16)
 
 ### :bug: Fixes
