@@ -23,7 +23,7 @@ go 1.27.0
 require (
 	github.com/aws/aws-sdk-go-v2 v1.48.0
 	github.com/ohartwig/s3mail v1.6.35
-	golang.org/x/mobile v0.0.0-20261011034528-197770444867
+	golang.org/x/mobile v0.0.0-20261117202452-47699113848a
 )
 
 require (
@@ -51,8 +51,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.7 // indirect
 	github.com/aws/smithy-go v1.28.9 // indirect
 	github.com/emersion/go-message v0.18.2 // indirect
-	golang.org/x/mod v0.42.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/mod v0.43.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
-	golang.org/x/tools v0.52.0 // indirect
+	golang.org/x/tools v0.53.0 // indirect
 )
