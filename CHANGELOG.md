@@ -1,3 +1,9 @@
+## [1.2.31](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.30...v1.2.31) (2026-11-18)
+
+### :bug: Fixes
+
+* **deps:** update golang.org/x/mobile digest to 4769911 ([bfeb90b](https://git.ole-hartwig.eu/development/s3mail/ios/commit/bfeb90b84a7c0b345edf16f335f37b1154aa65dc))
+
 ## [1.2.30](https://git.ole-hartwig.eu/development/s3mail/ios/compare/v1.2.29...v1.2.30) (2026-11-17)
 
 ### :bug: Fixes
